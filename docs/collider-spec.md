@@ -113,19 +113,20 @@ The other upgrades follow the same idea with different starting particles and gr
 | **Graviton** (theorized, never observed) | Bands 11–12 | 10 | 1 in 10,000 |
 
 - Before the reveal level, the rare **doesn't appear at all**. The UI can tease it ("faint signature detected…") for mystery.
+- Rares accumulate as a steady **expected-value trickle** (fractional amounts; the UI rounds down), not random rolls. Same result online and offline, and no bad-luck streaks.
 - Rares are spent on a few special upgrades and are worth a lot in the Particle Index.
 
 ---
 
 ## 6. Thresholds (power checks)
 
-Speed can't pass a Threshold until it's **breached**. Breaching happens once your **Power** meets the requirement. Then you tap *Breach*, which costs nothing and can't fail.
+Speed can't pass a Threshold until it's **breached**. Breaching happens once you've **reached the Threshold's band** and your **Power** meets the requirement. Then you tap *Breach*, which costs nothing and can't fail.
 
 | Threshold | After band | Power required (draft) | Unlocks |
 |---|---|---|---|
-| **T1** | 4 | 40 | Bands 5–8 · Particle Index buffs |
+| **T1** | 4 | 30 | Bands 5–8 · Particle Index buffs |
 | **T2** | 8 | 3,000 | Bands 9–12 · Wellspring |
-| **T3** | 12 | 250,000 | Recalibrate (prestige) · Ring Schematics |
+| **T3** | 12 | 2,000,000 | Recalibrate (prestige) · Ring Schematics |
 
 - The UI shows a progress bar (current Power ÷ required), so you always know how close you are.
 - Each breach reveals a **lore fragment**, usually a previous operator's note.
@@ -145,7 +146,8 @@ Speed can't pass a Threshold until it's **breached**. Breaching happens once you
 
 - Every particle gets an Index entry the **first time it's collected**: name, description, lore line.
 - **Index levels come from *lifetime* totals collected, not current balance**, so spending particles never lowers an Index level (no draining).
-- Buffs switch on at **T1**. Level *k* needs `100 × 5^(k−1)` lifetime collected (100, 500, 2,500 …).
+- Buffs switch on at **T1**. Level *k* needs `100 × 5^(k−1)` lifetime collected (100, 500, 2,500 …). Rares use a base of 1 instead of 100 (1, 5, 25 …).
+- Percent bonuses of the same kind add up (+5% and +5% = +10%). Cost and requirement reductions multiply (−3% twice = ×0.97²), so they can never reach zero.
 
 | Particle | Buff per Index level (draft) |
 |---|---|
@@ -185,7 +187,7 @@ Unlocks at **T2**. It's a small upgrade panel for now, not yet its own mini-game
 - Unlocks at **T3**. Available any time after that.
 - **Resets:** particles, Beam Current, Collector Grid, Sensitivity, Ring Speed.
 - **Keeps:** breached Thresholds (no repeated power checks), Particle Index levels, Wellspring, Ring Schematics.
-- **Earns Resonance:** `Resonance = floor(10 × (peak Power this run ÷ 250,000)^0.4)`, so the first Recalibrate gives about 10.
+- **Earns Resonance:** `Resonance = floor(10 × (peak Power this run ÷ 2,000,000)^0.4)`, so the first Recalibrate gives about 10.
 - The button always **shows the Resonance you'll get** before you confirm. Never a surprise, and always a net gain.
 
 ### Ring Schematics (MVP tree, ~20 nodes)
@@ -223,7 +225,8 @@ The simulation will also run an **idle player** (checks in every ~4–6 h) to ma
 
 ## 12. Implementation notes (for later)
 
-- **All tunable numbers live in data files** (e.g. `bands`, `particles`, `upgrades`, `thresholds`), not in code. Tuning means editing numbers, not logic.
+- **All tunable numbers live in data files** (`src/data/`: `bands`, `particles`, `upgrades`, `thresholds`, `constants`), not in code. Tuning means editing numbers, not logic.
+- Run `npm run sim` to see pacing. The **Watching** profile (buys the moment it can) shows the economy's own curve; **Engaged** and **Idle** add real check-in gaps and sleep, so their per-band ratios are noisy.
 - The economy is a **pure TypeScript module** with no UI: `state + elapsed time → new state`, and `state + purchase → new state`.
 - The **simulation** runs that same module headless with a simple "player bot" and outputs pacing charts.
 - Offline progress is the same function called with a large elapsed time, so one code path serves both.

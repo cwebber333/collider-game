@@ -1,0 +1,207 @@
+import { describe, expect, it } from 'vitest';
+import { BANDS } from '../data/bands';
+import { OFFLINE_CAP_SECONDS } from '../data/constants';
+import { THRESHOLDS } from '../data/thresholds';
+import { UPGRADE_IDS, UPGRADES } from '../data/upgrades';
+import {
+  advance,
+  advanceOffline,
+  apply,
+  canBreach,
+  density,
+  indexLevel,
+  newGame,
+  power,
+  productionRates,
+  rareChance,
+  resonanceGain,
+  upgradeCost,
+  type GameState,
+} from './index';
+
+/** A new game with some fields overridden. */
+function game(overrides: Partial<GameState> = {}): GameState {
+  return { ...newGame(), ...overrides };
+}
+
+function withLevels(levels: Partial<GameState['levels']>, overrides: Partial<GameState> = {}): GameState {
+  const base = game(overrides);
+  return { ...base, levels: { ...base.levels, ...levels } };
+}
+
+describe('data sanity', () => {
+  it('band mixes add up to 1', () => {
+    for (const band of BANDS) {
+      const total = Object.values(band.mix).reduce((a, b) => a + b, 0);
+      expect(total).toBeCloseTo(1);
+    }
+  });
+
+  it('cost tiers start at level 0 and go up', () => {
+    for (const id of UPGRADE_IDS) {
+      const froms = UPGRADES[id].costTiers.map((t) => t.fromLevel);
+      expect(froms[0]).toBe(0);
+      expect([...froms].sort((a, b) => a - b)).toEqual(froms);
+    }
+  });
+
+  it('Ring Speed has one cost row per band', () => {
+    expect(UPGRADES.ringSpeed.costTiers).toHaveLength(UPGRADES.ringSpeed.maxLevel!);
+    expect(UPGRADES.ringSpeed.maxLevel).toBe(BANDS.length - 1);
+  });
+});
+
+describe('production', () => {
+  it('starts at 0.8 photon + 0.2 electron per second', () => {
+    const rates = productionRates(newGame());
+    expect(rates.photon).toBeCloseTo(0.8);
+    expect(rates.electron).toBeCloseTo(0.2);
+    expect(rates.muon).toBe(0);
+  });
+
+  it('advance adds particles and lifetime totals', () => {
+    const s = advance(newGame(), 10);
+    expect(s.particles.photon).toBeCloseTo(8);
+    expect(s.lifetime.photon).toBeCloseTo(8);
+    expect(s.elapsed).toBe(10);
+  });
+
+  it('gives the same result however time is split', () => {
+    const once = advance(newGame(), 600);
+    const many = Array.from({ length: 60 }).reduce<GameState>((s) => advance(s, 10), newGame());
+    expect(many.particles.photon).toBeCloseTo(once.particles.photon);
+  });
+
+  it('ignores zero or negative time', () => {
+    const s = newGame();
+    expect(advance(s, 0)).toBe(s);
+    expect(advance(s, -5)).toBe(s);
+  });
+
+  it('caps offline progress', () => {
+    const capped = advanceOffline(newGame(), OFFLINE_CAP_SECONDS * 2);
+    expect(capped.elapsed).toBe(OFFLINE_CAP_SECONDS);
+  });
+
+  it('higher bands are denser; Stabilizers thin them', () => {
+    expect(density(newGame(), 1)).toBe(1);
+    expect(density(newGame(), 3)).toBeCloseTo(1.8 ** 2);
+    expect(density(withLevels({ stabilizers: 1 }), 3)).toBeCloseTo(1.8 ** 2 * 0.96);
+  });
+});
+
+describe('upgrades', () => {
+  it('Beam Current costs photons first and raises Power ×1.2', () => {
+    const cost = upgradeCost(newGame(), 'beamCurrent');
+    expect(Object.keys(cost!)).toEqual(['photon']);
+
+    const broke = newGame();
+    expect(apply(broke, { type: 'buy', upgrade: 'beamCurrent' })).toBe(broke);
+
+    const rich = game({ particles: { ...newGame().particles, photon: 1_000 } });
+    const bought = apply(rich, { type: 'buy', upgrade: 'beamCurrent' });
+    expect(bought.levels.beamCurrent).toBe(1);
+    expect(bought.particles.photon).toBe(1_000 - cost!.photon!);
+    expect(power(bought)).toBeCloseTo(1.2);
+    expect(bought.peakPower).toBeCloseTo(1.2);
+  });
+
+  it('switches to the next tier of particles', () => {
+    const cost = upgradeCost(withLevels({ beamCurrent: 8 }), 'beamCurrent');
+    expect(Object.keys(cost!).sort()).toEqual(['electron', 'photon']);
+  });
+
+  it('Wellspring is locked until Threshold 2', () => {
+    expect(upgradeCost(game({ breached: 1 }), 'conduits')).toBeNull();
+    expect(upgradeCost(game({ breached: 2 }), 'conduits')).not.toBeNull();
+  });
+
+  it('Ring Speed stops at an unbreached Threshold', () => {
+    const atT1 = withLevels({ ringSpeed: THRESHOLDS[0].afterBand - 1 });
+    expect(upgradeCost(atT1, 'ringSpeed')).toBeNull();
+    expect(upgradeCost({ ...atT1, breached: 1 }, 'ringSpeed')).not.toBeNull();
+  });
+});
+
+describe('thresholds', () => {
+  it('needs the band and the Power', () => {
+    const t1 = THRESHOLDS[0];
+    const levelsForPower = Math.ceil(Math.log(t1.power) / Math.log(UPGRADES.beamCurrent.perLevel));
+    expect(canBreach(withLevels({ beamCurrent: levelsForPower }))).toBe(false); // band too low
+    expect(canBreach(withLevels({ ringSpeed: t1.afterBand - 1 }))).toBe(false); // Power too low
+
+    const ready = withLevels({ ringSpeed: t1.afterBand - 1, beamCurrent: levelsForPower });
+    expect(canBreach(ready)).toBe(true);
+    expect(apply(ready, { type: 'breach' }).breached).toBe(1);
+  });
+});
+
+describe('band selection', () => {
+  it('only allows reached bands', () => {
+    const s = withLevels({ ringSpeed: 2 });
+    expect(apply(s, { type: 'selectBand', band: 3 }).selectedBand).toBe(3);
+    expect(apply(s, { type: 'selectBand', band: 4 })).toBe(s);
+    expect(apply(s, { type: 'selectBand', band: 0 })).toBe(s);
+  });
+});
+
+describe('Particle Index', () => {
+  it('levels at 100, 500, 2,500 … lifetime collected', () => {
+    const at = (n: number) => indexLevel(game({ lifetime: { ...newGame().lifetime, photon: n } }), 'photon');
+    expect(at(99)).toBe(0);
+    expect(at(100)).toBe(1);
+    expect(at(499)).toBe(1);
+    expect(at(500)).toBe(2);
+    expect(at(2_500)).toBe(3);
+  });
+
+  it('buffs only count after Threshold 1', () => {
+    const lifetime = { ...newGame().lifetime, photon: 500 }; // Index level 2: +10% Power
+    expect(power(game({ lifetime }))).toBe(1);
+    expect(power(game({ lifetime, breached: 1 }))).toBeCloseTo(1.1);
+  });
+});
+
+describe('rare particles', () => {
+  it('stay hidden until Sensitivity reveals them', () => {
+    const atBand3 = (sensitivity: number) => rareChance(withLevels({ sensitivity, ringSpeed: 2 }, { selectedBand: 3 }), 3);
+    expect(atBand3(0)).toBe(0);
+    expect(atBand3(1)).toBeCloseTo((1 / 2_000) * 1.2);
+    expect(rareChance(withLevels({ sensitivity: 1 }), 1)).toBe(0); // band 1 has no rare
+  });
+});
+
+describe('Recalibrate', () => {
+  it('is locked before Threshold 3', () => {
+    const s = game({ breached: 2 });
+    expect(apply(s, { type: 'recalibrate' })).toBe(s);
+    expect(resonanceGain(s)).toBe(0);
+  });
+
+  it('resets the run but keeps Index, Wellspring and Thresholds', () => {
+    const before = withLevels(
+      { beamCurrent: 70, ringSpeed: 11, conduits: 5, stabilizers: 3 },
+      {
+        breached: 3,
+        peakPower: THRESHOLDS[2].power,
+        particles: { ...newGame().particles, higgs: 1_000 },
+        lifetime: { ...newGame().lifetime, higgs: 5_000 },
+        selectedBand: 12,
+      },
+    );
+    const gain = resonanceGain(before);
+    expect(gain).toBeGreaterThanOrEqual(10);
+
+    const after = apply(before, { type: 'recalibrate' });
+    expect(after.resonance).toBe(gain);
+    expect(after.recalibrations).toBe(1);
+    expect(after.particles.higgs).toBe(0);
+    expect(after.levels.beamCurrent).toBe(0);
+    expect(after.levels.ringSpeed).toBe(0);
+    expect(after.selectedBand).toBe(1);
+    expect(after.lifetime.higgs).toBe(5_000);
+    expect(after.levels.conduits).toBe(5);
+    expect(after.levels.stabilizers).toBe(3);
+    expect(after.breached).toBe(3);
+  });
+});

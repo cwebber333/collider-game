@@ -74,6 +74,24 @@ A running record of decisions made while shaping the game design. Newest at the 
 | Particle naming | **Real particles first**, then theorized, then invented ("Known → Theorized → Impossible") | Ordered roughly by mass, so higher-energy bands make heavier particles. The Graviton is the turning point at the end of the MVP |
 | Threshold / region names | **None**: numbered power checks (T1, T2…), like the Obelisk | Band groups don't need names either |
 
+## Round 8 — Economy module and first balance pass (2026-10-08)
+
+| Topic | Decision | Notes |
+|---|---|---|
+| Economy code | `src/economy/` (pure TS) + `src/data/` (numbers) + `sim/` (bot + pacing report) | `npm run sim`, `npm test` |
+| Cost curves | Each upgrade's cost keeps growing at about the rate income grows (Beam Current ×1.35/level, continuing across particle tiers) | Tier bases that reset cheaper caused runaway Power in the first draft (1e9 at band 12) |
+| T1 / T3 Power | **T1 40 → 30**, **T3 250k → 2M** (Resonance reference moved to 2M too) | T3 at 250k was already met on arriving at band 12, so band 12 was skipped |
+| Breach rule | Must have **reached the Threshold's band** and have the Power | |
+| Rares | **Expected-value trickle**, not random rolls | Deterministic, same online/offline, no bad luck |
+| Rare Index levels | Base 1 (1, 5, 25 …) instead of 100 | Rares are ~1/2,000 per collision |
+
+**First sim results** (Watching / Engaged hourly / Idle every 5 h): T1 at 19m / 19m / 5h; T2 at 2h49m / 8h30m / 1d5h; T3 at 18h / 1d15h / 2d15h. Per band, the watched curve mostly runs **1.6–1.8×**, with one 2.75× spot at band 3 caused by the bot's buying order.
+
+**Findings to decide on:**
+1. **Spec targets vs. the smoothness rule.** Band 2 at ~2 min plus T1 at 30–45 min means each early band takes ~2.2× the previous one, which breaks "never more than 2×". The current tuning lands T1 at ~20 min instead.
+2. **One band per check-in.** Ring Speed for band *n + 1* costs band *n* particles, so you must sit at band *n* to buy the next one. Idle players gain at most one band per check-in, even in run 2 when everything is cheap. Spiral nodes (start at band 4, Band Cycle, Auto-Buy) would ease this.
+3. **Run 2 is already fast without Ring Schematics** (19–38% of run 1), because Index levels, Wellspring and breached Thresholds all carry over. Schematics could make run 2 trivial. Revisit Q3 (Wellspring kept) or make schematics nodes modest.
+
 ## Open questions
 - How do the four upgrade styles fit into one coherent structure without overload?
 - What makes the fusion theme concrete and different from AD's abstract dimensions?
