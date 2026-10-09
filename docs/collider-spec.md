@@ -1,0 +1,239 @@
+# Collider Spec — MVP (v0.1 draft)
+
+> Detailed spec for the core loop described in [GDD §3–4](GDD.md). Covers the first playable version: **bands 1–12, Thresholds 1–3, the first Recalibrate**.
+>
+> **All numbers are first guesses.** The balance simulation exists to tune them. Structure and formulas matter more than exact values right now.
+
+---
+
+## 1. Rules this spec must follow
+
+- Speed, Power and Detection **never trade off**. Raising any of them is always good.
+- **Nothing drains.** Particles only leave through purchases the player chooses. No upkeep, decay or fail states.
+- **No walls.** Time per band grows steadily (target ≤1.6× the previous band, **never more than 2×**).
+- Older bands stay useful: upgrade costs keep calling for their particles.
+
+---
+
+## 2. Bands
+
+You can set the Ring to any band from 1 up to your **max band** (raised by Speed upgrades). Each band has:
+
+- **Density:** how hard collisions are at that band. Higher density means fewer collisions for the same Power.
+- **Particle mix:** which particles are produced and in what share.
+- **Rare particle (sometimes):** shows up only with enough Sensitivity (§5).
+
+**Density (draft):** `density(b) = 1.8^(b − 1)`, so band 1 = 1, band 5 ≈ 10.5, band 12 ≈ 640.
+
+Particles **overlap across neighboring bands**, like IOM ores spanning several floors. Moving up a band never makes your current currencies disappear, which helps prevent walls.
+
+### Particle naming: Known → Theorized → Impossible
+
+The MVP particles are **real physics particles**, roughly **in order of mass**. That matches the physics: heavier particles need higher collision energy, so faster bands produce them. As the player goes deeper, particles move from real to **theorized** (predicted but never observed) to fully **invented**. The drift from real to unreal is part of the mystery.
+
+| Stage | Bands | Particles |
+|---|---|---|
+| **Known** | 1–12 (MVP) | Real particles (below) |
+| *Turning point* | 11–12 rare | **Graviton**: theorized, never observed… until the Ring finds it |
+| **Theorized** | Post-MVP region(s) | e.g. axion, tachyon, sterile neutrino, magnetic monopole, dark photon |
+| **Impossible** | Later | Invented particles (name brainstorm later) |
+
+| Band | Group | Particle mix (%) | Rare |
+|---|---|---|---|
+| 1 | 1 | Photon 80 · Electron 20 | – |
+| 2 | 1 | Photon 50 · Electron 40 · Muon 10 | – |
+| 3 | 1 | Photon 20 · Electron 40 · Muon 40 | Positron |
+| 4 | 1 | Electron 20 · Muon 50 · Pion 30 | Positron |
+| — | **Threshold 1** | | |
+| 5 | 2 | Muon 30 · Pion 50 · Kaon 20 | – |
+| 6 | 2 | Pion 30 · Kaon 50 · Tau 20 | – |
+| 7 | 2 | Kaon 30 · Tau 50 · J/psi 20 | Pentaquark |
+| 8 | 2 | Tau 30 · J/psi 50 · B meson 20 | Pentaquark |
+| — | **Threshold 2** | | |
+| 9 | 3 | J/psi 30 · B meson 50 · Z boson 20 | – |
+| 10 | 3 | B meson 30 · Z boson 50 · Higgs 20 | – |
+| 11 | 3 | Z boson 40 · Higgs 60 | Graviton |
+| 12 | 3 | Z boson 20 · Higgs 80 | Graviton |
+| — | **Threshold 3** | | |
+
+Approximate real masses for flavor text: photon 0 · electron 0.511 MeV · muon 106 MeV · pion 140 MeV · kaon 494 MeV · tau 1.78 GeV · J/psi 3.10 GeV · pentaquark ~4.4 GeV · B meson 5.28 GeV · Z boson 91.2 GeV · Higgs 125 GeV.
+
+Thresholds are simply numbered power checks (T1, T2, T3…), with no special names. Bands are grouped only by which Threshold they sit before or after.
+
+---
+
+## 3. Production
+
+```
+collisions/sec   = Power ÷ density(selected band)
+particles/sec    = collisions/sec × Yield
+each particle    = particles/sec × its share in that band
+rare chance/coll = rare base chance × Sensitivity multiplier   (only if Sensitivity ≥ reveal level)
+```
+
+- **Base values:** Power 1, Yield 1, so band 1 starts at 1 collision/sec ≈ 0.8 Mote + 0.2 Flicker per second.
+- **Offline:** produces at the **same rate as online** for the selected band, for up to **24 h** away. The cap can be raised later through progression (e.g. a schematics node).
+
+---
+
+## 4. Upgrades (MVP set)
+
+Every upgrade is a purchase with particles. **Costs shift to newer particles as the level rises, but keep some older ones**, which is what keeps old bands useful.
+
+| Upgrade | Stat | Effect per level (draft) | Notes |
+|---|---|---|---|
+| **Beam Current** | Power | ×1.2 Power | The main progression stat |
+| **Collector Grid** | Yield | +0.25 Yield (additive) | Cheaper, feels good early |
+| **Sensitivity** | Detection | +20% rare chance; reveals rares at levels 1 / 5 / 10 | Positron / Pentaquark / Graviton |
+| **Ring Speed** | Speed | +1 max band | One-time purchase per band; blocked at Thresholds until breached |
+
+**Cost pattern (draft):** `cost(level) = base × growth^level`, paid in the particles listed for that level range:
+
+| Beam Current levels | Paid in |
+|---|---|
+| 1–8 | Photon |
+| 9–16 | Photon + Electron |
+| 17–24 | Electron + Muon |
+| 25–32 | Muon + Pion |
+| 33–40 | Pion + Kaon |
+| … | (keeps walking up the particle list, always 2 particles: one older, one newer) |
+
+The other upgrades follow the same idea with different starting particles and growth rates, so different upgrades want different bands at any moment. That's where the "which band do I need?" decision comes from.
+
+**Ring Speed costs:** buying max band *n + 1* costs particles from band *n*, so you have to spend time farming at your current top band before pushing further.
+
+---
+
+## 5. Rare particles
+
+| Rare | Appears at | Reveal (Sensitivity lvl) | Base chance / collision |
+|---|---|---|---|
+| **Positron** (antimatter electron) | Bands 3–4 | 1 | 1 in 2,000 |
+| **Pentaquark** (real exotic, confirmed 2015) | Bands 7–8 | 5 | 1 in 5,000 |
+| **Graviton** (theorized, never observed) | Bands 11–12 | 10 | 1 in 10,000 |
+
+- Before the reveal level, the rare **doesn't appear at all**. The UI can tease it ("faint signature detected…") for mystery.
+- Rares are spent on a few special upgrades and are worth a lot in the Particle Index.
+
+---
+
+## 6. Thresholds (power checks)
+
+Speed can't pass a Threshold until it's **breached**. Breaching happens once your **Power** meets the requirement. Then you tap *Breach*, which costs nothing and can't fail.
+
+| Threshold | After band | Power required (draft) | Unlocks |
+|---|---|---|---|
+| **T1** | 4 | 40 | Bands 5–8 · Particle Index buffs |
+| **T2** | 8 | 3,000 | Bands 9–12 · Wellspring |
+| **T3** | 12 | 250,000 | Recalibrate (prestige) · Ring Schematics |
+
+- The UI shows a progress bar (current Power ÷ required), so you always know how close you are.
+- Each breach reveals a **lore fragment**, usually a previous operator's note.
+- Thresholds are **power checks only** (not detection) for now, to keep them easy to read.
+
+---
+
+## 7. Active vs. idle
+
+- **No temporary boosts** (an earlier "overcharge" idea was dropped). Short buffs make the normal speed feel slow whenever they aren't running.
+- Active players get ahead through **better-timed decisions**: switching bands when a new upgrade needs different particles, and buying upgrades promptly.
+- Automation nodes (Band Cycle, Auto-Buy) let idle players capture most of that benefit over time.
+
+---
+
+## 8. Particle Index (MVP)
+
+- Every particle gets an Index entry the **first time it's collected**: name, description, lore line.
+- **Index levels come from *lifetime* totals collected, not current balance**, so spending particles never lowers an Index level (no draining).
+- Buffs switch on at **T1**. Level *k* needs `100 × 5^(k−1)` lifetime collected (100, 500, 2,500 …).
+
+| Particle | Buff per Index level (draft) |
+|---|---|
+| Photon | +5% Power |
+| Electron | +5% Yield |
+| Muon | −3% Ring Speed costs |
+| Pion | −3% Beam Current costs |
+| Kaon | +5% Power |
+| Tau | +5% rare chance |
+| J/psi | +5% Wellspring output |
+| B meson | +5% Yield |
+| Z boson | −3% Threshold Power requirements |
+| Higgs boson | +5% Resonance from Recalibrate |
+| *Positron* (rare) | +3% all particles |
+| *Pentaquark* (rare) | +5% Power |
+| *Graviton* (rare) | +5% Resonance |
+
+**Index descriptions** for real particles can mix a real, accessible fun fact with a slightly *off* note from a previous operator (e.g. "The muons down here live longer than they should."). The science stays real, but something is subtly wrong, which foreshadows the turn toward the impossible.
+
+---
+
+## 9. Wellspring (MVP, simplest form)
+
+Unlocks at **T2**. It's a small upgrade panel for now, not yet its own mini-game.
+
+| Upgrade | Effect | Paid in |
+|---|---|---|
+| **Conduits** | ×1.15 Power multiplier per level | Band 9–12 particles |
+| **Stabilizers** | −4% band density per level (makes higher bands easier to farm) | Band 5–8 particles |
+
+**Kept through Recalibrate.** It acts as a permanent progression track, so each run starts stronger. Its costs grow steeply enough that later runs don't become trivial.
+
+---
+
+## 10. Recalibrate (prestige layer 1)
+
+- Unlocks at **T3**. Available any time after that.
+- **Resets:** particles, Beam Current, Collector Grid, Sensitivity, Ring Speed.
+- **Keeps:** breached Thresholds (no repeated power checks), Particle Index levels, Wellspring, Ring Schematics.
+- **Earns Resonance:** `Resonance = floor(10 × (peak Power this run ÷ 250,000)^0.4)`, so the first Recalibrate gives about 10.
+- The button always **shows the Resonance you'll get** before you confirm. Never a surprise, and always a net gain.
+
+### Ring Schematics (MVP tree, ~20 nodes)
+
+Three branches, bought with Resonance:
+
+| Branch | Example nodes |
+|---|---|
+| **Beam** (Power) | +25% Power · Wellspring +50% · Thresholds −10% requirement |
+| **Lens** (Detection/Yield) | +0.5 base Yield · rares +50% · Index levels need −20% |
+| **Spiral** (Speed/automation) | Start each run at max band 4 · **Band Cycle** (auto-rotate between 2 chosen bands) · **Auto-Buy** (buys upgrades automatically) · Ring Speed costs −25% · +12 h offline cap |
+
+Unlock-style nodes (Band Cycle, Auto-Buy) are the "CIFI feeling" of new mechanics, not just bigger numbers.
+
+---
+
+## 11. Pacing targets (what the simulation checks)
+
+For an **engaged player** (checks in about once an hour while awake, buys the best available upgrade each time):
+
+| Milestone | Target time from start |
+|---|---|
+| First upgrade | < 30 s |
+| Band 2 | ~2 min |
+| Band 4 / **T1** | ~30–45 min |
+| Band 8 / **T2** | ~6–8 h |
+| Band 12 / **T3** → first Recalibrate | ~1–1.5 days |
+| Second run back to T3 | ≤ 50% of the first run's time |
+
+**Smoothness rule:** time spent in each band grows by about 1.5× per band and **never jumps more than 2×** from one band to the next. The simulation flags any band that breaks this.
+
+The simulation will also run an **idle player** (checks in every ~4–6 h) to make sure idle stays reasonable.
+
+---
+
+## 12. Implementation notes (for later)
+
+- **All tunable numbers live in data files** (e.g. `bands`, `particles`, `upgrades`, `thresholds`), not in code. Tuning means editing numbers, not logic.
+- The economy is a **pure TypeScript module** with no UI: `state + elapsed time → new state`, and `state + purchase → new state`.
+- The **simulation** runs that same module headless with a simple "player bot" and outputs pacing charts.
+- Offline progress is the same function called with a large elapsed time, so one code path serves both.
+
+---
+
+## 13. Open questions
+
+- [x] **Q1. Offline cap:** **24 h**, raisable through progression.
+- [ ] **Q2. Pacing:** targets in §11 are the default until the simulation lets us feel them out. Also open: how many bands per region (currently 4)?
+- [x] **Q3. Wellspring on Recalibrate:** **kept** (recommended default; revisit if the simulation shows runs getting too fast).
+- [x] **Q4. Particle names:** real particles first (Known → Theorized → Impossible).
+- [x] **Q5. Region/Threshold names:** none needed. Thresholds are numbered power checks, like the Obelisk.
