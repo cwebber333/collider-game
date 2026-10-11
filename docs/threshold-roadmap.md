@@ -175,12 +175,13 @@ Connecting opens bands 37–48, the Outer Ring's first rare, and **The Archive**
 
 ## Notes and open questions
 
-- **Built so far (Inner Ring):** the Threshold track T1–T14 with Crystals, lore and rewards; all bands open from the start; Index buffs (T1), the +Power bonus (T4), Wellspring (T5), the offline-cap bonus (T7) and Recalibrate (T10) work. The other rewards show as "coming soon". T1–T10 requirements are tuned to the timeline; T11–T14 are placeholders until Ring Schematics exist.
-- **Still to change:** Sensitivity still reveals rares by level (until the rare research chain is built), and the three new Inner Ring rares (Antiproton, Tetraquark, Glueball) don't exist yet.
+- **Built so far (Inner Ring):** the Threshold track T1–T14 with Crystals, lore and rewards; all bands open from the start; Index buffs (T1), the +Power bonus (T4), Wellspring (T5), the offline-cap bonus (T7) and Recalibrate (T10) work. **Rare Research (T2)** works too: six Inner Ring rares, one per pair of bands, researched in order. The other rewards show as "coming soon". T1–T10 requirements are tuned to the timeline; T11–T14 are placeholders until Ring Schematics exist.
+- **Next to build:** Resonators (T3), then Experiments, Ring Schematics and Trials.
 - **Not designed yet:** the detailed upgrade lines for Resonators, the Experiments request rules and Data tree, the first set of Trials, and each Ring's rares after the Inner Ring.
 - **Trials need a "second save slot"** for the restricted run, so the main run waits untouched. Worth checking how IOM's Challenges handle this on its wiki before designing.
 - **Crystals:** every Threshold grants some, like IOM's gems per Obelisk. Spent mainly in a special upgrades shop (like CIFI's), plus small required costs such as part of each Ring connection, always covered by free Crystals. Amounts per Threshold and the shop contents aren't designed yet.
 - **Bonus-type rewards are tentative** and may be swapped for other rewards. Bonus sizes (+10% here and there) are placeholders. The sim will set them, along with each Threshold's Power requirement.
 - **Working names:** Resonators, Experiments, Trials, Detector Array, Excavation, The Archive and Stray Signals. Stray Signals is still a candidate.
+- **Notes** (Cards-like, GDD §6a) still need a Threshold slot; IOM unlocks Cards at Obelisk 15, so somewhere around T15–T20 is a natural fit.
 - **Ring twists** (a new rule per Ring, never a penalty) aren't designed yet.
 - **Layer 2** placement (T37) is a guess until its design exists.

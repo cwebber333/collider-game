@@ -1,6 +1,7 @@
 // The save-game shape. Economy functions never mutate a GameState;
 // they always return a new one (so React can tell when something changed).
 import { PARTICLE_IDS, type ParticleId } from '../data/particles';
+import { STARTING_RARES } from '../data/rares';
 import { UPGRADE_IDS, type UpgradeId } from '../data/upgrades';
 
 /** Record<K, V> is a dict type with exactly the keys K. */
@@ -21,6 +22,8 @@ export interface GameState {
   resonance: number;
   /** Premium currency from Thresholds. Never reset. */
   crystals: number;
+  /** Rares the Ring can detect (researched). Kept through Recalibrate. */
+  rares: ParticleId[];
   recalibrations: number;
   /** Total seconds advanced, online and offline. */
   elapsed: number;
@@ -46,6 +49,7 @@ export function newGame(): GameState {
     peakPower: 1,
     resonance: 0,
     crystals: 0,
+    rares: [...STARTING_RARES],
     recalibrations: 0,
     elapsed: 0,
   };

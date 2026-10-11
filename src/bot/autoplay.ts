@@ -2,9 +2,8 @@
 // attentive player (checks in whenever its next purchase is ready, at
 // least once a minute). Used by the dev tools. Pure: no React.
 import { THRESHOLDS } from '../data/thresholds';
-import type { UpgradeId } from '../data/upgrades';
 import { advance, stableBand, type GameState } from '../economy';
-import { checkIn, goalPlan } from './bot';
+import { checkIn, goalPlan, type Target } from './bot';
 
 export type AutoPlayGoal = 'nextBand' | 'nextThreshold';
 
@@ -17,7 +16,7 @@ export interface AutoPlayRun {
   state: GameState;
   /** Game seconds played so far. */
   seconds: number;
-  buys: Partial<Record<UpgradeId, number>>;
+  buys: Partial<Record<Target, number>>;
   done: boolean;
   /** True if it stopped on the time limit instead of the goal. */
   gaveUp: boolean;
@@ -44,7 +43,7 @@ export function startAutoPlay(state: GameState, goal: AutoPlayGoal): AutoPlayRun
 export function continueAutoPlay(run: AutoPlayRun, maxCheckIns = 100): AutoPlayRun {
   let { state, seconds } = run;
   const buys = { ...run.buys };
-  const onBuy = (_: GameState, id: UpgradeId) => {
+  const onBuy = (_: GameState, id: Target) => {
     buys[id] = (buys[id] ?? 0) + 1;
   };
   for (let i = 0; i < maxCheckIns; i++) {

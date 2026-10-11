@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { BANDS } from '../data/bands';
+import { PARTICLES } from '../data/particles';
+import { RARE_CHAIN } from '../data/rares';
 import { OFFLINE_CAP_SECONDS } from '../data/constants';
 import { THRESHOLDS } from '../data/thresholds';
 import { UPGRADE_IDS, UPGRADES } from '../data/upgrades';
@@ -11,6 +13,8 @@ import {
   bandEfficiency,
   canBreach,
   hasFeature,
+  nextResearch,
+  researchCost,
   offlineCap,
   thresholdFor,
   density,
@@ -44,6 +48,12 @@ describe('data sanity', () => {
       const total = Object.values(band.mix).reduce((a, b) => a + b, 0);
       expect(total).toBeCloseTo(1);
     }
+  });
+
+  it('rares follow the research chain in band order', () => {
+    const bandOrder = [...new Set(BANDS.map((b) => b.rare).filter((r) => r !== undefined))];
+    expect(bandOrder).toEqual(RARE_CHAIN.map((r) => r.rare));
+    expect(RARE_CHAIN[0].cost).toBeUndefined(); // the first rare is known from the start
   });
 
   it('cost tiers start at level 0 and go up', () => {
@@ -217,11 +227,31 @@ describe('Particle Index', () => {
 });
 
 describe('rare particles', () => {
-  it('stay hidden until Sensitivity reveals them', () => {
-    const atBand3 = (sensitivity: number) => rareChance(withLevels({ sensitivity, ringSpeed: 2 }, { selectedBand: 3 }), 3);
-    expect(atBand3(0)).toBe(0);
-    expect(atBand3(1)).toBeCloseTo((1 / 2_000) * 1.2);
-    expect(rareChance(withLevels({ sensitivity: 1 }), 1)).toBe(0); // band 1 has no rare
+  const POSITRON_CHANCE = PARTICLES.positron.rare!.baseChance;
+
+  it('start with only the Positron detectable', () => {
+    expect(rareChance(newGame(), 1)).toBe(POSITRON_CHANCE); // band 1: Positron
+    expect(rareChance(newGame(), 3)).toBe(0); // band 3: Antiproton, not researched
+  });
+
+  it('get more likely with Sensitivity', () => {
+    expect(rareChance(withLevels({ sensitivity: 2 }), 1)).toBeCloseTo(POSITRON_CHANCE * 1.4, 12);
+  });
+
+  it('are unlocked one at a time by Rare Research', () => {
+    const researchAt = thresholdFor('rareResearch')!;
+    expect(researchCost(game({ breached: researchAt - 1 }))).toBeNull(); // locked before its Threshold
+
+    const ready = game({ breached: researchAt, particles: { ...newGame().particles, electron: 1e6, muon: 1e6, positron: 40 } });
+    expect(nextResearch(ready)?.rare).toBe('antiproton');
+    const cost = researchCost(ready)!;
+    const after = apply(ready, { type: 'research' });
+    expect(after.rares).toContain('antiproton');
+    expect(after.particles.positron).toBe(40 - cost.positron!);
+    expect(rareChance(after, 3)).toBeGreaterThan(0);
+    expect(nextResearch(after)?.rare).toBe('tetraquark');
+    // Can't afford the next one, so nothing happens.
+    expect(apply(after, { type: 'research' })).toBe(after);
   });
 });
 
@@ -238,8 +268,9 @@ describe('Recalibrate', () => {
       {
         breached: thresholdFor('recalibrate')!,
         crystals: 120,
+        rares: ['positron', 'antiproton'],
         peakPower: THRESHOLDS[thresholdFor('recalibrate')! - 1].power,
-        particles: { ...newGame().particles, higgs: 1_000 },
+        particles: { ...newGame().particles, higgs: 1_000, positron: 7 },
         lifetime: { ...newGame().lifetime, higgs: 5_000 },
         selectedBand: 12,
       },
@@ -259,5 +290,7 @@ describe('Recalibrate', () => {
     expect(after.levels.stabilizers).toBe(0);
     expect(after.breached).toBe(thresholdFor('recalibrate'));
     expect(after.crystals).toBe(120);
+    expect(after.rares).toEqual(['positron', 'antiproton']);
+    expect(after.particles.positron).toBe(7); // rares are kept, like IOM's veins
   });
 });

@@ -1,5 +1,5 @@
-// A simple player bot. Its goal is the next Ring Speed level (or, when a
-// Threshold blocks that, more Power). At each check-in it:
+// A simple player bot. Its main goal is the next Ring Speed level (then more
+// Power once Ring Speed is maxed). At each check-in it:
 //   1. breaches a Threshold if it can,
 //   2. buys everything it can afford without dipping into particles saved
 //      for the goal (in priority order),
@@ -10,6 +10,7 @@ import {
   canBreach,
   bandCap,
   productionRates,
+  researchCost,
   upgradeCost,
   type Cost,
   type GameState,
@@ -17,19 +18,33 @@ import {
 import type { ParticleId } from '../data/particles';
 import { UPGRADE_IDS, type UpgradeId } from '../data/upgrades';
 
-const BUY_PRIORITY: UpgradeId[] = [
+/** Something the bot can spend on: an upgrade, or the next Rare Research. */
+export type Target = UpgradeId | 'research';
+
+const ALL_TARGETS: readonly Target[] = [...UPGRADE_IDS, 'research'];
+
+const BUY_PRIORITY: Target[] = [
   'ringSpeed',
   'beamCurrent',
   'conduits',
   'stabilizers',
   'collectorGrid',
+  'research',
   'sensitivity',
 ];
 
 export interface Plan {
-  upgrade: UpgradeId;
+  target: Target;
   band: number;
   seconds: number;
+}
+
+function targetCost(state: GameState, target: Target): Cost | null {
+  return target === 'research' ? researchCost(state) : upgradeCost(state, target);
+}
+
+function buyTarget(state: GameState, target: Target): GameState {
+  return target === 'research' ? apply(state, { type: 'research' }) : apply(state, { type: 'buy', upgrade: target });
 }
 
 /** Seconds until `cost` is affordable while farming `band` (Infinity if never). */
@@ -51,8 +66,9 @@ const PRODUCTION_UPGRADES: UpgradeId[] = ['beamCurrent', 'conduits', 'collectorG
  * paying off for. Production upgrades are permanent for the run, so this is generous.
  */
 const PAYBACK_HORIZON = 4;
-/** Sensitivity becomes the goal when it takes less than this share of the main goal's time. */
+/** Sensitivity or Rare Research becomes the goal when it takes less than this share of the main goal's time. */
 const CURIOSITY_SHARE = 0.25;
+const CURIOSITIES: Target[] = ['research', 'sensitivity'];
 
 /** Factor by which one more level of `id` raises total output at `band`. */
 function speedup(state: GameState, id: UpgradeId, band: number): number {
@@ -61,15 +77,15 @@ function speedup(state: GameState, id: UpgradeId, band: number): number {
   return total(bumped) / total(state);
 }
 
-/** The (upgrade, band) pair among `candidates` that is affordable soonest. */
-export function bestPlan(state: GameState, candidates: readonly UpgradeId[] = UPGRADE_IDS): Plan | null {
+/** The (target, band) pair among `candidates` that is affordable soonest. */
+export function bestPlan(state: GameState, candidates: readonly Target[] = ALL_TARGETS): Plan | null {
   let best: Plan | null = null;
-  for (const upgrade of candidates) {
-    const cost = upgradeCost(state, upgrade);
+  for (const target of candidates) {
+    const cost = targetCost(state, target);
     if (!cost) continue;
     for (let band = 1; band <= bandCap(state); band++) {
       const seconds = timeToAfford(state, cost, band);
-      if (seconds < (best?.seconds ?? Infinity)) best = { upgrade, band, seconds };
+      if (seconds < (best?.seconds ?? Infinity)) best = { target, band, seconds };
     }
   }
   return best;
@@ -81,35 +97,35 @@ export function mainPlan(state: GameState): Plan | null {
 }
 
 /**
- * What the bot is saving for. The main target is Ring Speed (or Power while a
- * Threshold blocks it), but a production upgrade goes first when the time it
- * takes to afford is less than the time it saves on the main target.
+ * What the bot is saving for. The main target is Ring Speed (then Power),
+ * but a production upgrade goes first when the time it takes to afford is
+ * less than the time it saves on the main target, and a cheap curiosity
+ * (Sensitivity or Rare Research) is worth a short detour.
  */
 export function goalPlan(state: GameState): Plan | null {
   const main = mainPlan(state);
   if (!main) return bestPlan(state);
   let best = main;
   for (const id of PRODUCTION_UPGRADES) {
-    if (id === main.upgrade) continue;
+    if (id === main.target) continue;
     const plan = bestPlan(state, [id]);
     if (!plan) continue;
     const saved = PAYBACK_HORIZON * main.seconds * (1 - 1 / speedup(state, id, main.band));
     if (plan.seconds < saved && (best === main || plan.seconds < best.seconds)) best = plan;
   }
-  // Curiosity: a cheap Sensitivity level is worth a short detour to find rares.
-  const sensitivity = bestPlan(state, ['sensitivity']);
-  if (sensitivity && sensitivity.seconds < CURIOSITY_SHARE * main.seconds && sensitivity.seconds < best.seconds) {
-    best = sensitivity;
+  for (const curiosity of CURIOSITIES) {
+    const plan = bestPlan(state, [curiosity]);
+    if (plan && plan.seconds < CURIOSITY_SHARE * main.seconds && plan.seconds < best.seconds) best = plan;
   }
   return best;
 }
 
 /** Affordable without spending particles reserved for the goal. */
-function canBuyKeepingGoal(state: GameState, id: UpgradeId, goal: Plan | null): boolean {
-  const cost = upgradeCost(state, id);
+function canBuyKeepingGoal(state: GameState, target: Target, goal: Plan | null): boolean {
+  const cost = targetCost(state, target);
   if (!cost || !canAfford(state, cost)) return false;
-  if (!goal || goal.upgrade === id) return true;
-  const goalCost = upgradeCost(state, goal.upgrade) ?? {};
+  if (!goal || goal.target === target) return true;
+  const goalCost = targetCost(state, goal.target) ?? {};
   return (Object.entries(cost) as [ParticleId, number][]).every(
     ([p, amount]) => state.particles[p] - amount >= (goalCost[p] ?? 0),
   );
@@ -118,7 +134,7 @@ function canBuyKeepingGoal(state: GameState, id: UpgradeId, goal: Plan | null): 
 export interface CheckInOptions {
   /** Expected seconds until the next check-in. */
   awaySeconds?: number;
-  onBuy?: (s: GameState, id: UpgradeId) => void;
+  onBuy?: (s: GameState, target: Target) => void;
 }
 
 // `{ awaySeconds = 0, onBuy }: CheckInOptions = {}` unpacks an options object
@@ -134,10 +150,10 @@ export function checkIn(state: GameState, { awaySeconds = 0, onBuy }: CheckInOpt
       continue;
     }
     const goal = goalPlan(s);
-    for (const id of BUY_PRIORITY) {
-      if (canBuyKeepingGoal(s, id, goal)) {
-        s = apply(s, { type: 'buy', upgrade: id });
-        onBuy?.(s, id); // `?.()` calls it only if it was passed in
+    for (const target of BUY_PRIORITY) {
+      if (canBuyKeepingGoal(s, target, goal)) {
+        s = buyTarget(s, target);
+        onBuy?.(s, target); // `?.()` calls it only if it was passed in
         changed = true;
         break;
       }
@@ -166,18 +182,18 @@ function coverage(state: GameState, cost: Cost, band: number, seconds: number): 
  * hold the particles Power needs), plus the next purchase at half weight.
  */
 function bandForAbsence(state: GameState, goal: Plan, main: Plan | null, seconds: number): number {
-  const targets: { upgrade: UpgradeId; weight: number }[] = [];
-  const add = (upgrade: UpgradeId | undefined, weight: number) => {
-    if (upgrade && !targets.some((t) => t.upgrade === upgrade)) targets.push({ upgrade, weight });
+  const targets: { target: Target; weight: number }[] = [];
+  const add = (target: Target | undefined, weight: number) => {
+    if (target && !targets.some((t) => t.target === target)) targets.push({ target, weight });
   };
-  add(main?.upgrade, 1);
-  add(bestPlan(state, POWER_UPGRADES)?.upgrade, 1);
-  add(goal.upgrade, 0.5);
+  add(main?.target, 1);
+  add(bestPlan(state, POWER_UPGRADES)?.target, 1);
+  add(goal.target, 0.5);
   let bestBand = goal.band;
   let bestScore = -1;
   for (let band = 1; band <= bandCap(state); band++) {
-    const score = targets.reduce((sum, { upgrade, weight }) => {
-      const cost = upgradeCost(state, upgrade);
+    const score = targets.reduce((sum, { target, weight }) => {
+      const cost = targetCost(state, target);
       if (!cost) return sum;
       const share = coverage(state, cost, band, seconds);
       // Finishing a purchase is worth more than getting most of the way there.

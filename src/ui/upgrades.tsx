@@ -35,14 +35,8 @@ function currentEffect(state: GameState, id: UpgradeId): string {
       return `Power ×${formatRate(per ** level)}`;
     case 'collectorGrid':
       return `Yield +${formatRate(per * level)}`;
-    case 'sensitivity': {
-      const nextReveal = Object.values(PARTICLES)
-        .map((p) => p.rare?.revealLevel ?? 0)
-        .filter((reveal) => reveal > level)
-        .sort((a, b) => a - b)[0];
-      const chance = level > 0 ? `Rare chance +${Math.round(per * level * 100)}%` : 'No rares detected';
-      return nextReveal ? `${chance} · new signal at Lv ${nextReveal}` : chance;
-    }
+    case 'sensitivity':
+      return `Rare chance +${Math.round(per * level * 100)}%`;
     case 'conduits':
       return `Power ×${formatRate(wellspringPowerMult(state))}`;
     case 'stabilizers':

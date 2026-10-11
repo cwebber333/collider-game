@@ -86,7 +86,7 @@ Every upgrade is a purchase with particles. **Costs shift to newer particles as 
 |---|---|---|---|
 | **Beam Current** | Power | ×1.2 Power | The main progression stat |
 | **Collector Grid** | Yield | +0.25 Yield (additive) | Cheaper, feels good early |
-| **Sensitivity** | Detection | +20% rare chance; reveals rares at levels 1 / 5 / 10 | Positron / Pentaquark / Graviton |
+| **Sensitivity** | Detection | +20% rare chance | Applies to every researched rare |
 | **Ring Speed** | Speed | ×2^(1/3) ≈ +26% beam energy | 3 levels make one more band stable. |
 
 **Cost pattern (draft):** `cost(level) = base × growth^level`, paid in the particles listed for that level range:
@@ -108,8 +108,25 @@ The other upgrades follow the same idea with different starting particles and gr
 
 ## 5. Rare particles
 
-| Rare | Appears at | Reveal (Sensitivity lvl) | Base chance / collision |
+Rares work like IOM's veins: one rare per pair of bands, unlocked one at a time by **Rare Research** (from T2), paid in particles from its bands plus some of the previous rare. Data: `src/data/rares.ts`.
+
+| Rare | Bands | Base chance / collision | Research cost (draft) |
 |---|---|---|---|
+| **Positron** (antimatter electron) | 1–2 | 1 in 2,500 | Known from the start |
+| **Antiproton** (antimatter proton) | 3–4 | 1 in 2,000 | 2K electron, 1.5K muon, 25 Positron |
+| **Tetraquark** (four quarks, observed) | 5–6 | 1 in 4,000 | 25K pion, 12K kaon, 15 Antiproton |
+| **Pentaquark** (five quarks, confirmed 2015) | 7–8 | 1 in 8,000 | 250K tau, 120K psi, 15 Tetraquark |
+| **Glueball** (pure gluons, predicted) | 9–10 | 1 in 15,000 | 3M B meson, 1.5M Z boson, 15 Pentaquark |
+| **Graviton** (theorized, never observed) | 11–12 | 1 in 30,000 | 30M Z boson, 25M Higgs, 15 Glueball |
+
+- **Sensitivity** raises the chance of every known rare (+20% per level). It no longer reveals rares.
+- A band whose rare isn't researched yet shows "a faint signature in the noise".
+- Rares accumulate as a steady **expected-value trickle** (fractional amounts; the UI rounds down), not random rolls. Same result online and offline, and no bad-luck streaks.
+- **Kept through Recalibrate**: both which rares are known and their balances.
+- **Spent on:** Rare Research now; Resonators and Ring connections later (see the [Threshold Roadmap](threshold-roadmap.md)).
+- Research should take deliberate farming, especially the rare part (play-test feedback: the first research was affordable the moment T2 opened). Sim, watching / engaged player: Antiproton ~1 h / ~3.75 h, Tetraquark ~1.3 h / ~6.75 h, Pentaquark ~3.7 h / ~8.75 h, Glueball ~10 h / ~1 day, Graviton ~16 h / ~1.2 days.
+
+---|---|---|---|
 | **Positron** (antimatter electron) | Bands 3–4 | 1 | 1 in 2,000 |
 | **Pentaquark** (real exotic, confirmed 2015) | Bands 7–8 | 5 | 1 in 5,000 |
 | **Graviton** (theorized, never observed) | Bands 11–12 | 10 | 1 in 10,000 |
@@ -168,8 +185,11 @@ Thresholds are an **Obelisk-style power track**, separate from the bands. The fu
 | B meson | +5% Yield |
 | Z boson | −3% Threshold Power requirements |
 | Higgs boson | +5% Resonance from Recalibrate |
-| *Positron* (rare) | +3% all particles |
+| *Positron* (rare) | +3% Yield |
+| *Antiproton* (rare) | +5% rare chance |
+| *Tetraquark* (rare) | −3% Threshold Power requirements |
 | *Pentaquark* (rare) | +5% Power |
+| *Glueball* (rare) | +5% Wellspring output |
 | *Graviton* (rare) | +5% Resonance |
 
 **Index descriptions** for real particles can mix a real, accessible fun fact with a slightly *off* note from a previous operator (e.g. "The muons down here live longer than they should."). The science stays real, but something is subtly wrong, which foreshadows the turn toward the impossible.

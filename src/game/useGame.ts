@@ -3,13 +3,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 import { continueAutoPlay, startAutoPlay, type AutoPlayGoal } from '../bot/autoplay';
+import type { Target } from '../bot/bot';
 import { PARTICLE_IDS, type ParticleId } from '../data/particles';
-import type { UpgradeId } from '../data/upgrades';
 import {
   advance,
   advanceOffline,
   apply,
   offlineCap,
+  researchCost,
   upgradeCost,
   zeroParticles,
   type Action,
@@ -36,21 +37,21 @@ export interface AutoPlayStatus {
   running: boolean;
   /** Game seconds the bot has played. */
   seconds: number;
-  buys: Partial<Record<UpgradeId, number>>;
+  buys: Partial<Record<Target, number>>;
   gaveUp: boolean;
 }
 
-/** Buys without spending anything (dev "free buys" mode). */
-function buyFree(state: GameState, upgrade: UpgradeId): GameState {
-  const cost = upgradeCost(state, upgrade);
-  if (!cost) return state;
-  // Top up whatever's missing, buy, then put the balances back as they were.
+/** Applies a buy or research without spending anything (dev "free buys" mode). */
+function applyFree(state: GameState, action: Action): GameState {
+  const cost = action.type === 'buy' ? upgradeCost(state, action.upgrade) : action.type === 'research' ? researchCost(state) : null;
+  if (!cost) return apply(state, action);
+  // Top up whatever's missing, apply, then put the balances back as they were.
   const particles = { ...state.particles };
   for (const [id, amount] of Object.entries(cost) as [ParticleId, number][]) {
     particles[id] = Math.max(particles[id], amount);
   }
-  const bought = apply({ ...state, particles }, { type: 'buy', upgrade });
-  return { ...bought, particles: state.particles };
+  const done = apply({ ...state, particles }, action);
+  return done === state ? state : { ...done, particles: state.particles };
 }
 
 function awayReport(before: GameState, after: GameState, seconds: number): AwayReport {
@@ -132,8 +133,7 @@ export function useGame() {
     (action: Action) => {
       const current = stateRef.current;
       if (!current || autoPlaying.current) return;
-      const next =
-        freeBuysRef.current && action.type === 'buy' ? buyFree(current, action.upgrade) : apply(current, action);
+      const next = freeBuysRef.current ? applyFree(current, action) : apply(current, action);
       if (next === current) return;
       commit(next);
       // Save right after big moments so they can't be lost.

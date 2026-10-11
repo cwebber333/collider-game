@@ -22,7 +22,7 @@ export const INDEX_LEVEL_GROWTH = 5;
 
 /** Resonance = floor(RESONANCE_SCALE × (peak Power ÷ RESONANCE_POWER)^RESONANCE_EXPONENT) */
 export const RESONANCE_SCALE = 10;
-export const RESONANCE_POWER = 2_600_000; // T10's requirement: the first Recalibrate gives ~10
+export const RESONANCE_POWER = 7_000_000; // T10's requirement: the first Recalibrate gives ~10
 export const RESONANCE_EXPONENT = 0.4;
 
 /**

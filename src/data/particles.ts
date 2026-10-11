@@ -15,8 +15,12 @@ export const PARTICLE_IDS = [
   'bmeson',
   'zboson',
   'higgs',
+  // Rares (Inner Ring), in research order.
   'positron',
+  'antiproton',
+  'tetraquark',
   'pentaquark',
+  'glueball',
   'graviton',
 ] as const;
 
@@ -49,12 +53,10 @@ export interface ParticleDef {
   /** Index level k needs indexBase × INDEX_LEVEL_GROWTH^(k−1) collected (lifetime). */
   indexBase: number;
   buff: { kind: BuffKind; perLevel: number };
-  /** Only for rare particles. */
+  /** Only for rare particles. Which bands they appear on is in bands.ts. */
   rare?: {
     /** Chance per collision at Sensitivity level 0 (before the Sensitivity bonus). */
     baseChance: number;
-    /** Sensitivity level needed before this particle can appear at all. */
-    revealLevel: number;
   };
 }
 
@@ -71,19 +73,35 @@ export const PARTICLES: Record<ParticleId, ParticleDef> = {
   zboson: { id: 'zboson', name: 'Z boson', symbol: 'Z', mass: '91.2 GeV', indexBase: 100, buff: { kind: 'thresholdReq', perLevel: 0.03 } },
   higgs: { id: 'higgs', name: 'Higgs boson', symbol: 'H', mass: '125 GeV', indexBase: 100, buff: { kind: 'resonance', perLevel: 0.05 } },
   // Rares are far scarcer, so their Index levels start at 1 collected instead of 100.
+  // Each one is unlocked by Rare Research (see rares.ts), except the Positron.
   positron: {
     id: 'positron', name: 'Positron', symbol: 'e⁺', mass: '0.511 MeV', indexBase: 1,
     buff: { kind: 'yield', perLevel: 0.03 },
-    rare: { baseChance: 1 / 2_000, revealLevel: 1 },
+    rare: { baseChance: 1 / 2_500 },
+  },
+  antiproton: {
+    id: 'antiproton', name: 'Antiproton', symbol: 'p̄', mass: '938 MeV', indexBase: 1,
+    buff: { kind: 'rareChance', perLevel: 0.05 },
+    rare: { baseChance: 1 / 2_000 },
+  },
+  tetraquark: {
+    id: 'tetraquark', name: 'Tetraquark', symbol: 'Tq', mass: '~3.9 GeV', indexBase: 1,
+    buff: { kind: 'thresholdReq', perLevel: 0.03 },
+    rare: { baseChance: 1 / 4_000 },
   },
   pentaquark: {
     id: 'pentaquark', name: 'Pentaquark', symbol: 'Pq', mass: '~4.4 GeV', indexBase: 1,
     buff: { kind: 'power', perLevel: 0.05 },
-    rare: { baseChance: 1 / 5_000, revealLevel: 5 },
+    rare: { baseChance: 1 / 8_000 },
+  },
+  glueball: {
+    id: 'glueball', name: 'Glueball', symbol: 'Gb', mass: '~1.7 GeV (predicted)', indexBase: 1,
+    buff: { kind: 'wellspring', perLevel: 0.05 },
+    rare: { baseChance: 1 / 15_000 },
   },
   graviton: {
     id: 'graviton', name: 'Graviton', symbol: 'G', mass: '?', indexBase: 1,
     buff: { kind: 'resonance', perLevel: 0.05 },
-    rare: { baseChance: 1 / 10_000, revealLevel: 10 },
+    rare: { baseChance: 1 / 30_000 },
   },
 };

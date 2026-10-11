@@ -2,8 +2,9 @@
 import { useState } from 'react';
 import { StyleSheet, Switch, Text, View } from 'react-native';
 import { canAutoPlay, type AutoPlayGoal } from '../bot/autoplay';
+import type { Target } from '../bot/bot';
 import { PARTICLE_IDS, PARTICLES } from '../data/particles';
-import { UPGRADES, type UpgradeId } from '../data/upgrades';
+import { UPGRADES } from '../data/upgrades';
 import type { GameState } from '../economy';
 import type { AwayReport, DevControls } from '../game/useGame';
 import { Button, Card } from './common';
@@ -39,7 +40,9 @@ export function DevTools({ state, dev }: { state: GameState; dev: DevControls })
   const { autoPlay } = dev;
   const busy = autoPlay?.running ?? false;
   const buys = autoPlay
-    ? (Object.entries(autoPlay.buys) as [UpgradeId, number][]).map(([id, n]) => `${UPGRADES[id].name} ×${n}`).join(', ')
+    ? (Object.entries(autoPlay.buys) as [Target, number][])
+        .map(([id, n]) => `${id === 'research' ? 'Rare Research' : UPGRADES[id].name} ×${n}`)
+        .join(', ')
     : '';
   return (
     <Card title="Dev tools">

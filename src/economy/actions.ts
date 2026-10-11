@@ -6,7 +6,8 @@ import {
   RESONANCE_POWER,
   RESONANCE_SCALE,
 } from '../data/constants';
-import type { ParticleId } from '../data/particles';
+import { PARTICLES, PARTICLE_IDS, type ParticleId } from '../data/particles';
+import { RARE_CHAIN, type RareResearchDef } from '../data/rares';
 import { THRESHOLDS, type ThresholdDef } from '../data/thresholds';
 import { UPGRADES, type UpgradeId } from '../data/upgrades';
 import { hasFeature } from './progress';
@@ -22,6 +23,7 @@ export type Action =
   | { type: 'buy'; upgrade: UpgradeId }
   | { type: 'selectBand'; band: number }
   | { type: 'breach' }
+  | { type: 'research' }
   | { type: 'recalibrate' };
 
 export type Cost = Partial<Record<ParticleId, number>>;
@@ -86,6 +88,33 @@ function buy(state: GameState, id: UpgradeId): GameState {
   return next;
 }
 
+// ---------- Rare Research ----------
+
+/** The next rare in the chain that hasn't been researched yet. */
+export function nextResearch(state: GameState): RareResearchDef | undefined {
+  return RARE_CHAIN.find((r) => !state.rares.includes(r.rare));
+}
+
+/** Cost of the next research, or null if there's nothing to research or it's locked. */
+export function researchCost(state: GameState): Cost | null {
+  if (!hasFeature(state, 'rareResearch')) return null;
+  return nextResearch(state)?.cost ?? null;
+}
+
+export function canResearch(state: GameState): boolean {
+  const cost = researchCost(state);
+  return cost !== null && canAfford(state, cost);
+}
+
+function research(state: GameState): GameState {
+  const cost = researchCost(state);
+  const next = nextResearch(state);
+  if (!cost || !next || !canAfford(state, cost)) return state;
+  const particles = { ...state.particles };
+  for (const [pid, amount] of Object.entries(cost) as [ParticleId, number][]) particles[pid] -= amount;
+  return { ...state, particles, rares: [...state.rares, next.rare] };
+}
+
 // ---------- Thresholds ----------
 
 export function nextThreshold(state: GameState): ThresholdDef | undefined {
@@ -122,11 +151,20 @@ export function resonanceGain(state: GameState): number {
   return Math.floor(base * (1 + buffBonus(state, 'resonance')));
 }
 
-/** Resets particles and all upgrades (Wellspring too); keeps Index, Thresholds and Crystals. */
+/**
+ * Resets particles and all upgrades (Wellspring too). Keeps the Index,
+ * Thresholds, Crystals, and rares (both which are known and their balances,
+ * like IOM's veins).
+ */
 function recalibrate(state: GameState): GameState {
   if (!canRecalibrate(state)) return state;
+  const fresh = newGame();
+  const particles = { ...fresh.particles };
+  for (const id of PARTICLE_IDS) if (PARTICLES[id].rare) particles[id] = state.particles[id];
   const next: GameState = {
-    ...newGame(),
+    ...fresh,
+    particles,
+    rares: state.rares,
     lifetime: state.lifetime,
     breached: state.breached,
     crystals: state.crystals,
@@ -150,6 +188,8 @@ export function apply(state: GameState, action: Action): GameState {
       return { ...state, selectedBand: action.band };
     case 'breach':
       return breach(state);
+    case 'research':
+      return research(state);
     case 'recalibrate':
       return recalibrate(state);
   }

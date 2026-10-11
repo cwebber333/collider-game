@@ -136,12 +136,11 @@ export function collisionsPerSecond(state: GameState, band: number): number {
 export function rareChance(state: GameState, band: number): number {
   const rareId = bandDef(band).rare;
   if (!rareId) return 0;
+  if (!state.rares.includes(rareId)) return 0; // not researched yet
   const rare = PARTICLES[rareId].rare!; // `!` = "not undefined here"; every rare has this field
-  const sensitivity = state.levels.sensitivity;
-  if (sensitivity < rare.revealLevel) return 0;
   return (
     rare.baseChance *
-    (1 + UPGRADES.sensitivity.perLevel * sensitivity) *
+    (1 + UPGRADES.sensitivity.perLevel * state.levels.sensitivity) *
     (1 + buffBonus(state, 'rareChance'))
   );
 }

@@ -21,9 +21,9 @@ import { colors, mono, space } from './theme';
 
 type Props = { state: GameState; dispatch: (action: Action) => void };
 
-/** Has the player's Sensitivity revealed this rare yet? */
+/** Has this rare been researched (so the Ring can detect it)? */
 export function rareRevealed(state: GameState, id: ParticleId): boolean {
-  return state.levels.sensitivity >= (PARTICLES[id].rare?.revealLevel ?? 0);
+  return state.rares.includes(id);
 }
 
 export function StatsHeader({ state }: { state: GameState }) {
@@ -122,7 +122,7 @@ export function ParticlesCard({ state }: { state: GameState }) {
       })}
       {bandRare && !rareRevealed(state, bandRare) && (
         <Text style={styles.tease}>
-          A faint signature in the noise… (needs Sensitivity {PARTICLES[bandRare].rare!.revealLevel})
+          A faint signature in the noise… (needs Rare Research)
         </Text>
       )}
     </Card>

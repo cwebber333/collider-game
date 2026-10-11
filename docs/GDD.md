@@ -104,6 +104,7 @@ Names are placeholders and deliberately not taken from the inspiration games.
 | **Ring Schematics** (prestige tree) | CIFI mod tree | Big branching tree; some nodes unlock mechanics | Global multipliers + unlocks |
 | **Side labs** (later, 1–2) | IOM fishing/archaeology | Small idle games with their own currency, e.g. decoding signals or excavating parts of the Ring | Each boosts a *different* system |
 | **Anomalies** (events) | Cave Heroes events | Rotating self-contained modes (§7) | Permanent buffs |
+| **Notes** (planned) | IOM Cards | Previous operators' notes found while collecting particles and using systems; upgraded through tiers (§6a) | The particle or system each note is about |
 
 Note how the cross-feeding comes out of the structure: the Wellspring is the power stat, the Detector Array is the detection stat, and the Index buffs specific systems.
 
@@ -113,6 +114,19 @@ Note how the cross-feeding comes out of the structure: the Wellspring is the pow
 - Each particle has **one targeted buff** (e.g. "+X% Wellspring output") and **levels up** as you detect more of it.
 - Some particles are **rare** and need high detection to spot. Completing the Index gives a clear 100% goal.
 - Particle descriptions carry lore. The Index doubles as the place where the mystery unfolds.
+
+## 6a. Notes (planned, not scheduled yet)
+
+A collectible system like **IOM's Cards**, themed as **notes left by previous operators**. Each note gives more knowledge of a particle or system, and that knowledge is the benefit.
+
+How IOM's Cards work (per the [Cards wiki page](https://shminer.miraheze.org/wiki/Cards), checked 2026-10-11): unlocked at Obelisk 15; you get a card by doing what it represents (collecting an ore, firing bombs, catching fish…); each card type gives one perk; tiers make it stronger: **Gilded** (paid with prestige points, gold, gems), **Polychrome** (needs a skill and 10 shards; must be Gilded first), **Infernal** (unlocked per set; 10 shards; scales with your total Infernal cards).
+
+Our version (draft):
+- **Found by doing:** collecting a particle, researching a rare, breaching a Threshold, using a system (Wellspring, Experiments…). Each note is about one particle or system.
+- **Each note gives one benefit** for its subject (e.g. a Muon note boosts muon gain).
+- **Tiers deepen the knowledge** (working names, not IOM's): *Note* → *Annotated* → *Cross-referenced* → *Unredacted*. Higher tiers need extra fragments or currencies and boost the effect more.
+- **Lore:** the note text itself is a piece of the mystery; higher tiers reveal more of what the operator wrote.
+- **Open questions:** where it unlocks (IOM's is Obelisk 15, so maybe early in the Second Ring); how it relates to the Particle Index (separate system, or the Index's upgrade layer); what the tier currencies are (Crystals could fit one tier).
 
 ## 7. Anomalies (rotating events)
 

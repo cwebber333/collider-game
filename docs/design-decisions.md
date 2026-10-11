@@ -134,6 +134,7 @@ A running record of decisions made while shaping the game design. Newest at the 
 | Premium currency | **Crystals.** Every Threshold grants some (like IOM's gems per Obelisk) | Briefly called Diamonds; switched to Crystals, which also avoids CIFI's name (its premium currency is Diamonds) |
 | Crystal uses | **Special upgrades shop** (like CIFI's diamond specials), plus **small required costs** (e.g. part of each Ring connection) | Any required Crystal cost must be covered by Crystals earned free by that point |
 | Buying Crystals | **Design for optional purchase later** (packs); nothing sold now | Never required, never needed for 100%, no ads, no temporary boosts or time skips |
+| Notes (idea) | **Plan a Cards-like system called Notes**: previous operators' notes about particles and systems, collected by doing and upgraded through tiers | Not scheduled yet; see GDD §6a. Tier names will be our own, not IOM's |
 | Bonus-type Threshold rewards | **Tentative** | May be swapped for other rewards later |
 | Recalibrate + Schematics | **Stay at T10** (~1.5 days) | Considered moving them to ~T4 (~3 h); with the whole Inner Ring taking ~4 days, a day-and-a-half first run is fine |
 | Threshold count | **~60** (14 / 14 / 16 / 16 per Ring) | Third and Outer Rings get a couple more, not ~20 |

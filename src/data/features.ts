@@ -27,7 +27,7 @@ export interface FeatureDef {
 
 export const FEATURES: Record<FeatureId, FeatureDef> = {
   indexBuffs: { name: 'Particle Index buffs', description: 'Each particle in the Index buffs one thing', built: true },
-  rareResearch: { name: 'Rare Research', description: 'Unlock new rare particles, one band pair at a time', built: false },
+  rareResearch: { name: 'Rare Research', description: 'Unlock new rare particles, one band pair at a time', built: true },
   resonators: { name: 'Resonators', description: 'Spend rares on permanent upgrades across systems', built: false },
   wellspring: { name: 'Wellspring', description: 'Conduits (Power) and Stabilizers (density)', built: true },
   experiments: { name: 'Experiments', description: 'Deliver particles to requests for Data upgrades', built: false },

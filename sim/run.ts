@@ -63,6 +63,8 @@ function simulate(player: Player) {
   console.log(`  First upgrade: ${fmt(run1.log.firstUpgrade)} (target < 30s)`);
   reportThresholds(run1.log, RUN1_THRESHOLDS);
   reportBands(run1.log);
+  const rares = [...run1.log.raresAt.entries()].map(([id, t]) => `${id} ${fmt(t)}`).join(', ');
+  console.log(`  Rares researched: ${rares || 'none'}`);
   if (!canRecalibrate(run1.state)) return;
 
   const peak = run1.state.peakPower;

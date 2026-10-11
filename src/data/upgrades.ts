@@ -76,7 +76,7 @@ export const UPGRADES: Record<UpgradeId, UpgradeDef> = {
   sensitivity: {
     id: 'sensitivity',
     name: 'Sensitivity',
-    description: '+20% rare chance per level; reveals rares at levels 1, 5 and 10',
+    description: '+20% rare chance per level',
     perLevel: 0.2,
     costTiers: [
       { fromLevel: 0, growth: 4, costs: [{ particle: 'electron', base: 100 }, { particle: 'muon', base: 68 }] },

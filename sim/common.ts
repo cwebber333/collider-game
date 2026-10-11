@@ -1,6 +1,6 @@
 // Shared pieces for the sim scripts: player habits, the play loop, targets.
-import { checkIn, goalPlan } from '../src/bot/bot';
-import type { UpgradeId } from '../src/data/upgrades';
+import { checkIn, goalPlan, type Target } from '../src/bot/bot';
+import type { ParticleId } from '../src/data/particles';
 import { advance, power, stableBand, type GameState } from '../src/economy';
 
 export const MINUTE = 60;
@@ -49,14 +49,22 @@ export interface RunLog {
   powerAtBand: Map<number, number>;
   /** Seconds when each Threshold was breached during this run, by Threshold number. */
   breachedAt: Map<number, number>;
-  buys: Map<UpgradeId, number>;
+  buys: Map<Target, number>;
+  /** Seconds when each rare became known (researched) during this run. */
+  raresAt: Map<ParticleId, number>;
   /** Seconds when `done` became true. */
   end?: number;
 }
 
 /** Plays from `start` until `done` or `maxSeconds`. */
 export function play(player: Player, start: GameState, done: (s: GameState) => boolean, maxSeconds: number) {
-  const log: RunLog = { bandStable: new Map(), powerAtBand: new Map(), breachedAt: new Map(), buys: new Map() };
+  const log: RunLog = {
+    bandStable: new Map(),
+    powerAtBand: new Map(),
+    breachedAt: new Map(),
+    buys: new Map(),
+    raresAt: new Map(),
+  };
   let state = start;
   let t = 0;
   const record = (s: GameState) => {
@@ -67,8 +75,9 @@ export function play(player: Player, start: GameState, done: (s: GameState) => b
       }
     }
     for (let k = start.breached + 1; k <= s.breached; k++) if (!log.breachedAt.has(k)) log.breachedAt.set(k, t);
+    for (const rare of s.rares) if (!start.rares.includes(rare) && !log.raresAt.has(rare)) log.raresAt.set(rare, t);
   };
-  const onBuy = (_: GameState, id: UpgradeId) => {
+  const onBuy = (_: GameState, id: Target) => {
     log.firstUpgrade ??= t; // `??=` assigns only if still undefined
     log.buys.set(id, (log.buys.get(id) ?? 0) + 1);
   };
