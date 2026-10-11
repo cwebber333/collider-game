@@ -1,15 +1,14 @@
 // Upgrade lists: the collider's own upgrades and, after T2, the Wellspring.
 import { StyleSheet, Text, View } from 'react-native';
 import { PARTICLES, type ParticleId } from '../data/particles';
-import { THRESHOLDS } from '../data/thresholds';
 import { UPGRADES, type UpgradeId } from '../data/upgrades';
 import {
-  blockingThreshold,
   canAfford,
   energy,
   isMaxed,
   isUnlocked,
   stableBand,
+  thresholdFor,
   upgradeCost,
   wellspringPowerMult,
   type Action,
@@ -54,10 +53,6 @@ function currentEffect(state: GameState, id: UpgradeId): string {
 /** Why there's no cost to show, if there isn't one. */
 function unavailableReason(state: GameState, id: UpgradeId): string | null {
   if (isMaxed(state, id)) return 'Maxed';
-  if (id === 'ringSpeed') {
-    const t = blockingThreshold(state);
-    if (t) return `Breach T${THRESHOLDS.indexOf(t) + 1} to push past band ${t.afterBand}`;
-  }
   return null;
 }
 
@@ -102,7 +97,7 @@ export function WellspringCard(props: Props) {
   if (!isUnlocked(props.state, 'conduits')) {
     return (
       <Card title="Wellspring">
-        <Text style={styles.tease}>Something below the Ring is humming. (Breach T2)</Text>
+        <Text style={styles.tease}>Something below the Ring is humming. (Breach T{thresholdFor('wellspring')})</Text>
       </Card>
     );
   }

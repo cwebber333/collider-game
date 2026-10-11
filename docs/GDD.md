@@ -33,7 +33,7 @@ Three stats, all **purely upgradable**. There are no trade-offs: raising any sta
 
 | Stat | What it does | IOM counterpart | Fed by (later) |
 |---|---|---|---|
-| **Speed** | **Beam energy.** Every band up to the next Threshold is open; Speed decides how high a band runs at full output. Above that, output falls off sharply. Each band produces its own group of particles | Choosing which floor to mine | Thresholds (§4) |
+| **Speed** | **Beam energy.** All of a Ring's bands are open; Speed decides how high a band runs at full output. Above that, output falls off sharply. Each band produces its own group of particles | Choosing which floor to mine | Thresholds (§4) |
 | **Power** | **Collision rate**: how fast particles are produced. Higher bands are "denser" and need more power to farm efficiently | Pickaxe damage vs. rock HP | Wellspring |
 | **Detection** | **Yield** per collision, the chance to catch **rare** particles, and the ability to see faint particles that only appear above a detection level | Loot / luck stats | Detector Array |
 

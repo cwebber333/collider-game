@@ -6,13 +6,12 @@ import {
   BASE_YIELD,
   DENSITY_GROWTH,
   ENERGY_PER_BAND,
-  INDEX_BUFFS_AFTER_THRESHOLDS,
   INDEX_LEVEL_GROWTH,
   OFF_BAND_EXPONENT,
 } from '../data/constants';
 import { PARTICLE_IDS, PARTICLES, type BuffKind, type ParticleId } from '../data/particles';
-import { THRESHOLDS } from '../data/thresholds';
 import { UPGRADES } from '../data/upgrades';
+import { hasFeature, thresholdBonus } from './progress';
 import { zeroParticles, type GameState, type ParticleAmounts } from './state';
 
 /** Rounding slack so 3 levels of ×2^(1/3) count as exactly ×2. */
@@ -20,9 +19,10 @@ const EPSILON = 1e-9;
 
 // ---------- Bands ----------
 
-/** Highest band the dial can reach: the band before the next unbreached Threshold. */
-export function bandCap(state: GameState): number {
-  return THRESHOLDS[state.breached]?.afterBand ?? BANDS.length;
+/** Highest band the dial can reach. All of a Ring's bands are open; only the Inner Ring exists so far. */
+// Takes the state so later Rings can raise the cap without changing callers.
+export function bandCap(_state: GameState): number {
+  return BANDS.length;
 }
 
 /** Beam energy from Ring Speed. */
@@ -74,7 +74,7 @@ export function indexProgress(state: GameState, id: ParticleId): { level: number
 }
 
 export function indexBuffsActive(state: GameState): boolean {
-  return state.breached >= INDEX_BUFFS_AFTER_THRESHOLDS;
+  return hasFeature(state, 'indexBuffs');
 }
 
 /** Summed percent bonus for an additive buff kind, e.g. 0.15 for +15%. */
@@ -111,6 +111,7 @@ export function power(state: GameState): number {
     BASE_POWER *
     UPGRADES.beamCurrent.perLevel ** state.levels.beamCurrent *
     (1 + buffBonus(state, 'power')) *
+    (1 + thresholdBonus(state, 'power')) *
     wellspringPowerMult(state)
   );
 }

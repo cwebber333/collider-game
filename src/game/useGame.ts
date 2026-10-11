@@ -9,6 +9,7 @@ import {
   advance,
   advanceOffline,
   apply,
+  offlineCap,
   upgradeCost,
   zeroParticles,
   type Action,
@@ -24,6 +25,8 @@ const AWAY_REPORT_SECONDS = 60;
 
 export interface AwayReport {
   seconds: number;
+  /** Offline cap that applied (seconds). */
+  capSeconds: number;
   gained: ParticleAmounts;
 }
 
@@ -53,7 +56,7 @@ function buyFree(state: GameState, upgrade: UpgradeId): GameState {
 function awayReport(before: GameState, after: GameState, seconds: number): AwayReport {
   const gained = zeroParticles();
   for (const id of PARTICLE_IDS) gained[id] = after.particles[id] - before.particles[id];
-  return { seconds, gained };
+  return { seconds, capSeconds: offlineCap(before), gained };
 }
 
 export function useGame() {

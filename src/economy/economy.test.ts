@@ -10,6 +10,9 @@ import {
   bandCap,
   bandEfficiency,
   canBreach,
+  hasFeature,
+  offlineCap,
+  thresholdFor,
   density,
   indexLevel,
   newGame,
@@ -139,41 +142,60 @@ describe('upgrades', () => {
     expect(Object.keys(cost!).sort()).toEqual(['electron', 'photon']);
   });
 
-  it('Wellspring is locked until Threshold 2', () => {
-    expect(upgradeCost(game({ breached: 1 }), 'conduits')).toBeNull();
-    expect(upgradeCost(game({ breached: 2 }), 'conduits')).not.toBeNull();
+  it('Wellspring is locked until its Threshold', () => {
+    const at = thresholdFor('wellspring')!;
+    expect(upgradeCost(game({ breached: at - 1 }), 'conduits')).toBeNull();
+    expect(upgradeCost(game({ breached: at }), 'conduits')).not.toBeNull();
   });
 
-  it('Ring Speed stops at an unbreached Threshold', () => {
-    const atT1 = withLevels({ ringSpeed: speedFor(THRESHOLDS[0].afterBand) });
-    expect(upgradeCost(withLevels({ ringSpeed: speedFor(THRESHOLDS[0].afterBand) - 1 }), 'ringSpeed')).not.toBeNull();
-    expect(upgradeCost(atT1, 'ringSpeed')).toBeNull();
-    expect(upgradeCost({ ...atT1, breached: 1 }, 'ringSpeed')).not.toBeNull();
+  it('Ring Speed is never blocked by Thresholds, only by its max level', () => {
+    expect(upgradeCost(withLevels({ ringSpeed: speedFor(4) }), 'ringSpeed')).not.toBeNull();
+    expect(upgradeCost(withLevels({ ringSpeed: UPGRADES.ringSpeed.maxLevel! }), 'ringSpeed')).toBeNull();
   });
 });
 
 describe('thresholds', () => {
-  it('needs the band and the Power', () => {
+  it('Power requirements always go up', () => {
+    for (let i = 1; i < THRESHOLDS.length; i++) expect(THRESHOLDS[i].power).toBeGreaterThan(THRESHOLDS[i - 1].power);
+  });
+
+  it('are a pure Power check that pays Crystals', () => {
     const t1 = THRESHOLDS[0];
     const levelsForPower = Math.ceil(Math.log(t1.power) / Math.log(UPGRADES.beamCurrent.perLevel));
-    expect(canBreach(withLevels({ beamCurrent: levelsForPower }))).toBe(false); // band too low
-    expect(canBreach(withLevels({ ringSpeed: speedFor(t1.afterBand) }))).toBe(false); // Power too low
+    expect(canBreach(withLevels({ beamCurrent: levelsForPower - 1 }))).toBe(false);
 
-    const ready = withLevels({ ringSpeed: speedFor(t1.afterBand), beamCurrent: levelsForPower });
+    const ready = withLevels({ beamCurrent: levelsForPower });
     expect(canBreach(ready)).toBe(true);
-    expect(apply(ready, { type: 'breach' }).breached).toBe(1);
+    const after = apply(ready, { type: 'breach' });
+    expect(after.breached).toBe(1);
+    expect(after.crystals).toBe(t1.crystals);
+  });
+
+  it('unlock features and give bonuses once breached', () => {
+    expect(hasFeature(game({ breached: 0 }), 'indexBuffs')).toBe(false);
+    expect(hasFeature(game({ breached: thresholdFor('indexBuffs')! }), 'indexBuffs')).toBe(true);
+
+    const powerBonusAt = THRESHOLDS.findIndex((t) => t.reward.kind === 'bonus' && t.reward.bonus === 'power') + 1;
+    expect(power(game({ breached: powerBonusAt - 1 }))).toBe(1);
+    expect(power(game({ breached: powerBonusAt }))).toBeCloseTo(1.1);
+  });
+
+  it('can raise the offline cap', () => {
+    const capAt = THRESHOLDS.findIndex((t) => t.reward.kind === 'bonus' && t.reward.bonus === 'offlineCap') + 1;
+    expect(offlineCap(game({ breached: capAt - 1 }))).toBe(OFFLINE_CAP_SECONDS);
+    expect(offlineCap(game({ breached: capAt }))).toBe(OFFLINE_CAP_SECONDS + 4 * 3600);
+    const away = advanceOffline(game({ breached: capAt }), OFFLINE_CAP_SECONDS * 2);
+    expect(away.elapsed).toBe(OFFLINE_CAP_SECONDS + 4 * 3600);
   });
 });
 
 describe('band selection', () => {
-  it('opens every band up to the next Threshold', () => {
+  it('opens all of the Inner Ring from the start', () => {
     const s = newGame();
-    expect(bandCap(s)).toBe(THRESHOLDS[0].afterBand);
-    expect(apply(s, { type: 'selectBand', band: 4 }).selectedBand).toBe(4);
-    expect(apply(s, { type: 'selectBand', band: 5 })).toBe(s);
+    expect(bandCap(s)).toBe(BANDS.length);
+    expect(apply(s, { type: 'selectBand', band: BANDS.length }).selectedBand).toBe(BANDS.length);
+    expect(apply(s, { type: 'selectBand', band: BANDS.length + 1 })).toBe(s);
     expect(apply(s, { type: 'selectBand', band: 0 })).toBe(s);
-    expect(bandCap(game({ breached: 1 }))).toBe(THRESHOLDS[1].afterBand);
-    expect(bandCap(game({ breached: THRESHOLDS.length }))).toBe(BANDS.length);
   });
 });
 
@@ -187,10 +209,10 @@ describe('Particle Index', () => {
     expect(at(2_500)).toBe(3);
   });
 
-  it('buffs only count after Threshold 1', () => {
+  it('buffs only count once their Threshold unlocks them', () => {
     const lifetime = { ...newGame().lifetime, photon: 500 }; // Index level 2: +10% Power
     expect(power(game({ lifetime }))).toBe(1);
-    expect(power(game({ lifetime, breached: 1 }))).toBeCloseTo(1.1);
+    expect(power(game({ lifetime, breached: thresholdFor('indexBuffs')! }))).toBeCloseTo(1.1);
   });
 });
 
@@ -204,18 +226,19 @@ describe('rare particles', () => {
 });
 
 describe('Recalibrate', () => {
-  it('is locked before Threshold 3', () => {
-    const s = game({ breached: 2 });
+  it('is locked before its Threshold', () => {
+    const s = game({ breached: thresholdFor('recalibrate')! - 1 });
     expect(apply(s, { type: 'recalibrate' })).toBe(s);
     expect(resonanceGain(s)).toBe(0);
   });
 
-  it('resets the run and the Wellspring but keeps Index and Thresholds', () => {
+  it('resets the run and the Wellspring but keeps Index, Thresholds and Crystals', () => {
     const before = withLevels(
       { beamCurrent: 70, ringSpeed: 11, conduits: 5, stabilizers: 3 },
       {
-        breached: 3,
-        peakPower: THRESHOLDS[2].power,
+        breached: thresholdFor('recalibrate')!,
+        crystals: 120,
+        peakPower: THRESHOLDS[thresholdFor('recalibrate')! - 1].power,
         particles: { ...newGame().particles, higgs: 1_000 },
         lifetime: { ...newGame().lifetime, higgs: 5_000 },
         selectedBand: 12,
@@ -234,6 +257,7 @@ describe('Recalibrate', () => {
     expect(after.lifetime.higgs).toBe(5_000);
     expect(after.levels.conduits).toBe(0);
     expect(after.levels.stabilizers).toBe(0);
-    expect(after.breached).toBe(3);
+    expect(after.breached).toBe(thresholdFor('recalibrate'));
+    expect(after.crystals).toBe(120);
   });
 });

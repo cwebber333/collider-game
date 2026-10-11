@@ -19,6 +19,8 @@ export interface GameState {
   /** Highest Power reached this run (for Resonance). */
   peakPower: number;
   resonance: number;
+  /** Premium currency from Thresholds. Never reset. */
+  crystals: number;
   recalibrations: number;
   /** Total seconds advanced, online and offline. */
   elapsed: number;
@@ -43,6 +45,7 @@ export function newGame(): GameState {
     breached: 0,
     peakPower: 1,
     resonance: 0,
+    crystals: 0,
     recalibrations: 0,
     elapsed: 0,
   };

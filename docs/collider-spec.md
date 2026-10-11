@@ -17,7 +17,7 @@
 
 ## 2. Bands
 
-A band is the Ring's version of an IOM floor: a **beam-energy setting** you dial the Ring to. Every band up to the next unbreached Threshold is open; there is no cost to unlock a band. Each band has:
+A band is the Ring's version of an IOM floor: a **beam-energy setting** you dial the Ring to. All of a Ring's bands are open (the Inner Ring's from the start); there is no cost to unlock a band. Each band has:
 
 - **Energy needed:** `2^(b − 1)`. Speed (beam energy) at or above it runs the band at **full output** (the band is *stable*). Below it, output falls off: `(energy ÷ needed)²`, so one band too high gives 25% and two bands give about 6%.
 
@@ -43,27 +43,24 @@ The MVP particles are **real physics particles**, roughly **in order of mass**. 
 
 **Names stay simple:** no slashes or punctuation (see the decisions log).
 
-| Band | Group | Particle mix (%) | Rare |
-|---|---|---|---|
-| 1 | 1 | Photon 80 · Electron 20 | – |
-| 2 | 1 | Photon 50 · Electron 40 · Muon 10 | – |
-| 3 | 1 | Photon 20 · Electron 40 · Muon 40 | Positron |
-| 4 | 1 | Electron 20 · Muon 50 · Pion 30 | Positron |
-| — | **Threshold 1** | | |
-| 5 | 2 | Muon 30 · Pion 50 · Kaon 20 | – |
-| 6 | 2 | Pion 30 · Kaon 50 · Tau 20 | – |
-| 7 | 2 | Kaon 30 · Tau 50 · Psi 20 | Pentaquark |
-| 8 | 2 | Tau 30 · Psi 50 · B meson 20 | Pentaquark |
-| — | **Threshold 2** | | |
-| 9 | 3 | Psi 30 · B meson 50 · Z boson 20 | – |
-| 10 | 3 | B meson 30 · Z boson 50 · Higgs 20 | – |
-| 11 | 3 | Z boson 40 · Higgs 60 | Graviton |
-| 12 | 3 | Z boson 20 · Higgs 80 | Graviton |
-| — | **Threshold 3** | | |
+| Band | Particle mix (%) | Rare |
+|---|---|---|
+| 1 | Photon 80 · Electron 20 | – |
+| 2 | Photon 50 · Electron 40 · Muon 10 | – |
+| 3 | Photon 20 · Electron 40 · Muon 40 | Positron |
+| 4 | Electron 20 · Muon 50 · Pion 30 | Positron |
+| 5 | Muon 30 · Pion 50 · Kaon 20 | – |
+| 6 | Pion 30 · Kaon 50 · Tau 20 | – |
+| 7 | Kaon 30 · Tau 50 · Psi 20 | Pentaquark |
+| 8 | Tau 30 · Psi 50 · B meson 20 | Pentaquark |
+| 9 | Psi 30 · B meson 50 · Z boson 20 | – |
+| 10 | B meson 30 · Z boson 50 · Higgs 20 | – |
+| 11 | Z boson 40 · Higgs 60 | Graviton |
+| 12 | Z boson 20 · Higgs 80 | Graviton |
 
 Approximate real masses for flavor text: photon 0 · electron 0.511 MeV · muon 106 MeV · pion 140 MeV · kaon 494 MeV · tau 1.78 GeV · psi (also called J/psi) 3.10 GeV · pentaquark ~4.4 GeV · B meson 5.28 GeV · Z boson 91.2 GeV · Higgs 125 GeV.
 
-Thresholds are simply numbered power checks (T1, T2, T3…), with no special names. Bands are grouped only by which Threshold they sit before or after.
+All 12 Inner Ring bands are open from the start; Speed and Power decide how well you can farm them. Thresholds are a separate power track (§6).
 
 ---
 
@@ -90,7 +87,7 @@ Every upgrade is a purchase with particles. **Costs shift to newer particles as 
 | **Beam Current** | Power | ×1.2 Power | The main progression stat |
 | **Collector Grid** | Yield | +0.25 Yield (additive) | Cheaper, feels good early |
 | **Sensitivity** | Detection | +20% rare chance; reveals rares at levels 1 / 5 / 10 | Positron / Pentaquark / Graviton |
-| **Ring Speed** | Speed | ×2^(1/3) ≈ +26% beam energy | 3 levels make one more band stable. Can't go past a Threshold's band until it's breached |
+| **Ring Speed** | Speed | ×2^(1/3) ≈ +26% beam energy | 3 levels make one more band stable. |
 
 **Cost pattern (draft):** `cost(level) = base × growth^level`, paid in the particles listed for that level range:
 
@@ -125,10 +122,15 @@ The other upgrades follow the same idea with different starting particles and gr
 
 ## 6. Thresholds (power checks)
 
-Speed can't pass a Threshold until it's **breached**. Breaching happens once the Threshold's band is **stable** (enough Speed) and your **Power** meets the requirement. Then you tap *Breach*, which costs nothing and can't fail.
+Thresholds are an **Obelisk-style power track**, separate from the bands. The full list of all ~60, with rewards and timeline, is in the [Threshold Roadmap](threshold-roadmap.md); this section covers the rules.
 
-| Threshold | After band | Power required (draft) | Unlocks |
-|---|---|---|---|
+- **Breaching:** once your **Power** meets the requirement, you tap *Breach*. It costs nothing and can't fail.
+- **Every breach gives** Crystals (premium currency), a **lore fragment** (a previous operator's note), and one reward: an unlock, a bonus, or a Ring milestone.
+- **Kept through Recalibrate.**
+- Requirements are tuned with `npm run tune`, which reads an engaged player's Power at each Threshold's target time.
+- The UI shows the next Threshold's reward and a progress bar (current Power ÷ required), plus a list of all Thresholds.
+
+---|---|---|---|
 | **T1** | 4 | 50 | Bands 5–8 · Particle Index buffs |
 | **T2** | 8 | 3,000 | Bands 9–12 · Wellspring |
 | **T3** | 12 | 1,200,000 | Recalibrate (prestige) · Ring Schematics |
@@ -176,7 +178,7 @@ Speed can't pass a Threshold until it's **breached**. Breaching happens once the
 
 ## 9. Wellspring (MVP, simplest form)
 
-Unlocks at **T2**. It's a small upgrade panel for now, not yet its own mini-game.
+Unlocks at **T5**. It's a small upgrade panel for now, not yet its own mini-game.
 
 | Upgrade | Effect | Paid in |
 |---|---|---|
@@ -189,10 +191,10 @@ Unlocks at **T2**. It's a small upgrade panel for now, not yet its own mini-game
 
 ## 10. Recalibrate (prestige layer 1)
 
-- Unlocks at **T3**. Available any time after that.
+- Unlocks at **T10**. Available any time after that.
 - **Resets:** particles, Beam Current, Collector Grid, Sensitivity, Ring Speed, Wellspring.
 - **Keeps:** breached Thresholds (no repeated power checks), Particle Index levels, Ring Schematics.
-- **Earns Resonance:** `Resonance = floor(10 × (peak Power this run ÷ 1,200,000)^0.4)`, so the first Recalibrate gives about 10.
+- **Earns Resonance:** `Resonance = floor(10 × (peak Power this run ÷ 2,600,000)^0.4)`, so the first Recalibrate gives about 10.
 - The button always **shows the Resonance you'll get** before you confirm. Never a surprise, and always a net gain.
 
 ### Ring Schematics (first ~20 nodes of a large tree)
@@ -213,10 +215,22 @@ Unlock-style nodes (Band Cycle, Auto-Buy) are the "CIFI feeling" of new mechanic
 
 ## 11. Pacing targets (what the simulation checks)
 
-For an **engaged player** (checks in about once an hour while awake, buys the best available upgrade each time):
+The timeline lives in the [Threshold Roadmap](threshold-roadmap.md) (engaged player: checks in about hourly while awake). Key Inner Ring points:
 
 | Milestone | Target time from start |
 |---|---|
+| First upgrade | < 30 s |
+| Band 2 stable | ~2 min |
+| T1 | ~10 min |
+| T5 (Wellspring) | ~4.5 h |
+| T10 (Recalibrate) | ~1.5 days |
+| T14 (connect to the Second Ring) | ~4 days (needs Ring Schematics) |
+
+`npm run sim` reports each Threshold's time against its target for watching, engaged and idle players.
+
+**Smoothness rule:** time spent in each band (from stable to the next band stable) grows by about 1.5× per band and **never jumps more than 2×** from one band to the next. **Bands 1–4 are exempt** so the opening can move fast. The simulation flags any band from 5 on that breaks this.
+
+---|---|
 | First upgrade | < 30 s |
 | Band 2 | ~2 min |
 | Band 4 / **T1** | ~30–45 min |

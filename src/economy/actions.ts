@@ -2,7 +2,6 @@
 // Invalid actions return the same state object unchanged, so the UI can
 // dispatch freely and use the `can...` helpers to grey out buttons.
 import {
-  RECALIBRATE_AFTER_THRESHOLDS,
   RESONANCE_EXPONENT,
   RESONANCE_POWER,
   RESONANCE_SCALE,
@@ -10,8 +9,9 @@ import {
 import type { ParticleId } from '../data/particles';
 import { THRESHOLDS, type ThresholdDef } from '../data/thresholds';
 import { UPGRADES, type UpgradeId } from '../data/upgrades';
+import { hasFeature } from './progress';
 import { newGame, type GameState } from './state';
-import { bandCap, buffBonus, buffReduction, power, stableBand } from './stats';
+import { bandCap, buffBonus, buffReduction, power } from './stats';
 
 /**
  * A "discriminated union": each action is an object whose `type` field says
@@ -29,7 +29,8 @@ export type Cost = Partial<Record<ParticleId, number>>;
 // ---------- Upgrades ----------
 
 export function isUnlocked(state: GameState, id: UpgradeId): boolean {
-  return state.breached >= UPGRADES[id].unlockAfterThresholds;
+  const feature = UPGRADES[id].unlockedBy;
+  return feature === undefined || hasFeature(state, feature);
 }
 
 export function isMaxed(state: GameState, id: UpgradeId): boolean {
@@ -37,16 +38,9 @@ export function isMaxed(state: GameState, id: UpgradeId): boolean {
   return max !== undefined && state.levels[id] >= max;
 }
 
-/** The Threshold holding back Ring Speed: its band already runs at full output. */
-export function blockingThreshold(state: GameState): ThresholdDef | undefined {
-  const t = THRESHOLDS[state.breached];
-  return t && stableBand(state) >= t.afterBand ? t : undefined;
-}
-
-/** Cost of the next level, or null if it can't be bought (locked, maxed, blocked). */
+/** Cost of the next level, or null if it can't be bought (locked or maxed). */
 export function upgradeCost(state: GameState, id: UpgradeId): Cost | null {
   if (!isUnlocked(state, id) || isMaxed(state, id)) return null;
-  if (id === 'ringSpeed' && blockingThreshold(state)) return null;
 
   const level = state.levels[id];
   const tiers = UPGRADES[id].costTiers;
@@ -102,17 +96,23 @@ export function thresholdPowerRequired(state: GameState, threshold: ThresholdDef
   return threshold.power * buffReduction(state, 'thresholdReq');
 }
 
-/** Needs the Threshold's band at full output and enough Power. */
+/** A pure Power check, like IOM's Obelisk. */
 export function canBreach(state: GameState): boolean {
   const t = nextThreshold(state);
-  if (!t) return false;
-  return stableBand(state) >= t.afterBand && power(state) >= thresholdPowerRequired(state, t);
+  return t !== undefined && power(state) >= thresholdPowerRequired(state, t);
+}
+
+/** Breaching gives the Threshold's Crystals; its reward applies through `hasFeature`/`thresholdBonus`. */
+function breach(state: GameState): GameState {
+  const t = nextThreshold(state);
+  if (!t || !canBreach(state)) return state;
+  return { ...state, breached: state.breached + 1, crystals: state.crystals + t.crystals };
 }
 
 // ---------- Recalibrate ----------
 
 export function canRecalibrate(state: GameState): boolean {
-  return state.breached >= RECALIBRATE_AFTER_THRESHOLDS;
+  return hasFeature(state, 'recalibrate');
 }
 
 /** Resonance the player would get from Recalibrating now (shown before confirming). */
@@ -122,13 +122,14 @@ export function resonanceGain(state: GameState): number {
   return Math.floor(base * (1 + buffBonus(state, 'resonance')));
 }
 
-/** Resets particles and all upgrades (Wellspring too); keeps Index and Thresholds. */
+/** Resets particles and all upgrades (Wellspring too); keeps Index, Thresholds and Crystals. */
 function recalibrate(state: GameState): GameState {
   if (!canRecalibrate(state)) return state;
   const next: GameState = {
     ...newGame(),
     lifetime: state.lifetime,
     breached: state.breached,
+    crystals: state.crystals,
     resonance: state.resonance + resonanceGain(state),
     recalibrations: state.recalibrations + 1,
     elapsed: state.elapsed,
@@ -148,7 +149,7 @@ export function apply(state: GameState, action: Action): GameState {
       if (!Number.isInteger(action.band) || action.band < 1 || action.band > bandCap(state)) return state;
       return { ...state, selectedBand: action.band };
     case 'breach':
-      return canBreach(state) ? { ...state, breached: state.breached + 1 } : state;
+      return breach(state);
     case 'recalibrate':
       return recalibrate(state);
   }

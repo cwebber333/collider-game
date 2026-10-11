@@ -5,6 +5,7 @@
 // of each listed particle. When the level reaches the next tier, the
 // particles switch (usually one older + one newer), which keeps old
 // bands useful and makes the player move the dial.
+import type { FeatureId } from './features';
 import type { ParticleId } from './particles';
 
 export const UPGRADE_IDS = [
@@ -32,8 +33,8 @@ export interface UpgradeDef {
   /** Effect size per level; how it's applied lives in src/economy/stats.ts. */
   perLevel: number;
   maxLevel?: number;
-  /** Number of Thresholds that must be breached before this can be bought. */
-  unlockAfterThresholds: number;
+  /** Threshold feature that unlocks this upgrade (none = available from the start). */
+  unlockedBy?: FeatureId;
   costTiers: CostTier[];
 }
 
@@ -43,7 +44,6 @@ export const UPGRADES: Record<UpgradeId, UpgradeDef> = {
     name: 'Beam Current',
     description: '×1.2 Power per level',
     perLevel: 1.2,
-    unlockAfterThresholds: 0,
     // Tier bases continue the ×1.35-per-level curve, so switching particles
     // doesn't make the next level suddenly cheap.
     costTiers: [
@@ -64,7 +64,6 @@ export const UPGRADES: Record<UpgradeId, UpgradeDef> = {
     name: 'Collector Grid',
     description: '+0.25 Yield per level',
     perLevel: 0.25,
-    unlockAfterThresholds: 0,
     costTiers: [
       { fromLevel: 0, growth: 3, costs: [{ particle: 'electron', base: 10 }] },
       { fromLevel: 4, growth: 3, costs: [{ particle: 'electron', base: 350 }, { particle: 'muon', base: 250 }] },
@@ -79,7 +78,6 @@ export const UPGRADES: Record<UpgradeId, UpgradeDef> = {
     name: 'Sensitivity',
     description: '+20% rare chance per level; reveals rares at levels 1, 5 and 10',
     perLevel: 0.2,
-    unlockAfterThresholds: 0,
     costTiers: [
       { fromLevel: 0, growth: 4, costs: [{ particle: 'electron', base: 100 }, { particle: 'muon', base: 68 }] },
       { fromLevel: 5, growth: 4, costs: [{ particle: 'kaon', base: 27_000 }, { particle: 'tau', base: 19_000 }] },
@@ -93,7 +91,6 @@ export const UPGRADES: Record<UpgradeId, UpgradeDef> = {
     description: '+26% beam energy per level. Each band needs twice the energy of the one below',
     perLevel: 2 ** (1 / 3), // 3 levels double the energy: one more band runs at full output
     maxLevel: 33, // band 12 at full output in the MVP
-    unlockAfterThresholds: 0,
     // One tier per band: levels 3k to 3k + 2 bring band k + 2 up to full
     // output, paid with particles from band k + 1 (the band just below it).
     costTiers: [
@@ -110,13 +107,13 @@ export const UPGRADES: Record<UpgradeId, UpgradeDef> = {
       { fromLevel: 30, growth: 1.4, costs: [{ particle: 'zboson', base: 18_000_000 }, { particle: 'higgs', base: 16_000_000 }] },
     ],
   },
-  // Wellspring (unlocks at Threshold 2). Resets on Recalibrate.
+  // Wellspring (unlocked by a Threshold; see thresholds.ts). Resets on Recalibrate.
   conduits: {
     id: 'conduits',
     name: 'Conduits',
     description: '×1.15 Power per level',
     perLevel: 1.15,
-    unlockAfterThresholds: 2,
+    unlockedBy: 'wellspring',
     costTiers: [
       { fromLevel: 0, growth: 2.2, costs: [{ particle: 'bmeson', base: 560_000 }, { particle: 'zboson', base: 410_000 }] },
       { fromLevel: 10, growth: 2.2, costs: [{ particle: 'zboson', base: 1_100_000_000 }, { particle: 'higgs', base: 950_000_000 }] },
@@ -127,7 +124,7 @@ export const UPGRADES: Record<UpgradeId, UpgradeDef> = {
     name: 'Stabilizers',
     description: '−4% band density per level',
     perLevel: 0.04,
-    unlockAfterThresholds: 2,
+    unlockedBy: 'wellspring',
     costTiers: [
       { fromLevel: 0, growth: 2, costs: [{ particle: 'kaon', base: 380_000 }, { particle: 'tau', base: 270_000 }] },
       { fromLevel: 10, growth: 2, costs: [{ particle: 'tau', base: 270_000_000 }, { particle: 'psi', base: 200_000_000 }] },

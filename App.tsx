@@ -5,7 +5,7 @@ import { useGame } from './src/game/useGame';
 import { BandDial, ParticlesCard, StatsHeader } from './src/ui/collider';
 import { AwayCard, DevTools } from './src/ui/misc';
 import { IndexCard } from './src/ui/particle-index';
-import { LoreCard, RecalibrateCard, ThresholdCard } from './src/ui/progress';
+import { LoreCard, RecalibrateCard, ThresholdCard, ThresholdListCard } from './src/ui/progress';
 import { colors, space } from './src/ui/theme';
 import { UpgradesCard, WellspringCard } from './src/ui/upgrades';
 
@@ -42,6 +42,7 @@ function Game() {
       <UpgradesCard {...props} freeBuys={dev.freeBuys} />
       <WellspringCard {...props} freeBuys={dev.freeBuys} />
       <RecalibrateCard {...props} />
+      <ThresholdListCard state={state} />
       <IndexCard state={state} />
       <LoreCard state={state} />
       {__DEV__ && <DevTools state={state} dev={dev} />}

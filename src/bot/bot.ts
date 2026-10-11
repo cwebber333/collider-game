@@ -46,8 +46,11 @@ export function timeToAfford(state: GameState, cost: Cost, band: number): number
 
 const POWER_UPGRADES: UpgradeId[] = ['beamCurrent', 'conduits'];
 const PRODUCTION_UPGRADES: UpgradeId[] = ['beamCurrent', 'conduits', 'collectorGrid', 'stabilizers'];
-/** How many "next Ring Speed levels" a production upgrade is expected to keep paying off for. */
-const PAYBACK_HORIZON = 2;
+/**
+ * How many "next Ring Speed levels" a production upgrade is expected to keep
+ * paying off for. Production upgrades are permanent for the run, so this is generous.
+ */
+const PAYBACK_HORIZON = 4;
 /** Sensitivity becomes the goal when it takes less than this share of the main goal's time. */
 const CURIOSITY_SHARE = 0.25;
 
@@ -72,7 +75,7 @@ export function bestPlan(state: GameState, candidates: readonly UpgradeId[] = UP
   return best;
 }
 
-/** Ring Speed, or Power while a Threshold blocks it. */
+/** Ring Speed until it's maxed, then Power. */
 export function mainPlan(state: GameState): Plan | null {
   return bestPlan(state, ['ringSpeed']) ?? bestPlan(state, POWER_UPGRADES);
 }
@@ -158,16 +161,28 @@ function coverage(state: GameState, cost: Cost, band: number, seconds: number): 
 
 /**
  * Before a long absence, a band that finishes the next purchase early and then
- * sits idle is a waste. Pick the band that makes the most progress on both the
- * next purchase and the main goal over the whole absence.
+ * sits idle is a waste. Pick the band that makes the most progress over the
+ * whole absence on the main goal and the next Power upgrade (old bands often
+ * hold the particles Power needs), plus the next purchase at half weight.
  */
 function bandForAbsence(state: GameState, goal: Plan, main: Plan | null, seconds: number): number {
-  const costs = [upgradeCost(state, goal.upgrade)];
-  if (main && main.upgrade !== goal.upgrade) costs.push(upgradeCost(state, main.upgrade));
+  const targets: { upgrade: UpgradeId; weight: number }[] = [];
+  const add = (upgrade: UpgradeId | undefined, weight: number) => {
+    if (upgrade && !targets.some((t) => t.upgrade === upgrade)) targets.push({ upgrade, weight });
+  };
+  add(main?.upgrade, 1);
+  add(bestPlan(state, POWER_UPGRADES)?.upgrade, 1);
+  add(goal.upgrade, 0.5);
   let bestBand = goal.band;
   let bestScore = -1;
   for (let band = 1; band <= bandCap(state); band++) {
-    const score = costs.reduce((sum, cost) => sum + (cost ? coverage(state, cost, band, seconds) : 0), 0);
+    const score = targets.reduce((sum, { upgrade, weight }) => {
+      const cost = upgradeCost(state, upgrade);
+      if (!cost) return sum;
+      const share = coverage(state, cost, band, seconds);
+      // Finishing a purchase is worth more than getting most of the way there.
+      return sum + weight * (share >= 1 ? 2 : share);
+    }, 0);
     if (score > bestScore + 1e-9) {
       bestScore = score;
       bestBand = band;

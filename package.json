@@ -30,7 +30,8 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "sim": "tsx sim/run.ts",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "tune": "tsx sim/tune.ts"
   },
   "private": true
 }

@@ -175,12 +175,8 @@ Connecting opens bands 37–48, the Outer Ring's first rare, and **The Archive**
 
 ## Notes and open questions
 
-- **Changes from the current build:**
-  - All 12 bands open from the start (now bands 5+ wait for T1/T2).
-  - Wellspring moves to T5.
-  - Sensitivity no longer reveals rares by level; it only raises the chance of unlocked ones.
-  - Three new Inner Ring rares (Antiproton, Tetraquark, Glueball).
-  - The collider spec's pacing targets (§11) get replaced by this timeline when this is built.
+- **Built so far (Inner Ring):** the Threshold track T1–T14 with Crystals, lore and rewards; all bands open from the start; Index buffs (T1), the +Power bonus (T4), Wellspring (T5), the offline-cap bonus (T7) and Recalibrate (T10) work. The other rewards show as "coming soon". T1–T10 requirements are tuned to the timeline; T11–T14 are placeholders until Ring Schematics exist.
+- **Still to change:** Sensitivity still reveals rares by level (until the rare research chain is built), and the three new Inner Ring rares (Antiproton, Tetraquark, Glueball) don't exist yet.
 - **Not designed yet:** the detailed upgrade lines for Resonators, the Experiments request rules and Data tree, the first set of Trials, and each Ring's rares after the Inner Ring.
 - **Trials need a "second save slot"** for the restricted run, so the main run waits untouched. Worth checking how IOM's Challenges handle this on its wiki before designing.
 - **Crystals:** every Threshold grants some, like IOM's gems per Obelisk. Spent mainly in a special upgrades shop (like CIFI's), plus small required costs such as part of each Ring connection, always covered by free Crystals. Amounts per Threshold and the shop contents aren't designed yet.

@@ -2,7 +2,6 @@
 import { useState } from 'react';
 import { StyleSheet, Switch, Text, View } from 'react-native';
 import { canAutoPlay, type AutoPlayGoal } from '../bot/autoplay';
-import { OFFLINE_CAP_SECONDS } from '../data/constants';
 import { PARTICLE_IDS, PARTICLES } from '../data/particles';
 import { UPGRADES, type UpgradeId } from '../data/upgrades';
 import type { GameState } from '../economy';
@@ -13,12 +12,12 @@ import { colors, mono, space } from './theme';
 
 export function AwayCard({ report, onDismiss }: { report: AwayReport; onDismiss: () => void }) {
   const gained = PARTICLE_IDS.filter((id) => report.gained[id] > 0);
-  const capped = report.seconds > OFFLINE_CAP_SECONDS;
+  const capped = report.seconds > report.capSeconds;
   return (
     <Card title="While you were away" style={{ borderColor: colors.accent }}>
       <Text style={styles.body}>
         Away {formatDuration(report.seconds)}
-        {capped ? ` (the Ring ran for the first ${formatDuration(OFFLINE_CAP_SECONDS)})` : ''}. Collected:
+        {capped ? ` (the Ring ran for the first ${formatDuration(report.capSeconds)})` : ''}. Collected:
       </Text>
       <View style={styles.gains}>
         {gained.map((id) => (

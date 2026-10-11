@@ -2,7 +2,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { BANDS } from '../data/bands';
 import { PARTICLE_IDS, PARTICLES, type ParticleId } from '../data/particles';
-import { THRESHOLDS } from '../data/thresholds';
 import {
   bandCap,
   bandDef,
@@ -56,8 +55,6 @@ export function BandDial({ state, dispatch }: Props) {
           const locked = band > cap;
           const selected = band === state.selectedBand;
           const efficiency = bandEfficiency(state, band);
-          // Thresholds standing between band 1 and this band (T1 for bands 5–8, …).
-          const thresholdsNeeded = THRESHOLDS.filter((t) => t.afterBand < band).length;
           // Top two particles by share, for a quick hint of what the band makes.
           const top = (Object.entries(mix) as [ParticleId, number][])
             .sort((a, b) => b[1] - a[1])
@@ -77,7 +74,7 @@ export function BandDial({ state, dispatch }: Props) {
             >
               <Text style={[styles.chipBand, locked && { color: colors.faint }]}>{band}</Text>
               {locked ? (
-                <Text style={styles.chipSub}>T{thresholdsNeeded}</Text>
+                <Text style={styles.chipSub}>Locked</Text>
               ) : (
                 <>
                   <Text style={[styles.chipSub, efficiency < 1 && { color: colors.warn }]}>

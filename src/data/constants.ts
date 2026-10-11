@@ -19,15 +19,11 @@ export const OFFLINE_CAP_SECONDS = 24 * 60 * 60;
 
 /** Each Index level needs this many times more lifetime particles than the last. */
 export const INDEX_LEVEL_GROWTH = 5;
-/** Index buffs switch on once this many Thresholds are breached. */
-export const INDEX_BUFFS_AFTER_THRESHOLDS = 1;
 
 /** Resonance = floor(RESONANCE_SCALE × (peak Power ÷ RESONANCE_POWER)^RESONANCE_EXPONENT) */
 export const RESONANCE_SCALE = 10;
-export const RESONANCE_POWER = 1_200_000;
+export const RESONANCE_POWER = 2_600_000; // T10's requirement: the first Recalibrate gives ~10
 export const RESONANCE_EXPONENT = 0.4;
-/** Recalibrate unlocks after this many Thresholds. */
-export const RECALIBRATE_AFTER_THRESHOLDS = 3;
 
 /**
  * Longest step `advance` takes at once. Long offline periods are split into

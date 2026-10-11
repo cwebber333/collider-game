@@ -1,7 +1,8 @@
 // Time passing: `state + elapsed seconds → state`. Online ticks and offline
 // catch-up use the same function, so they always produce the same result.
-import { MAX_TICK_SECONDS, OFFLINE_CAP_SECONDS } from '../data/constants';
+import { MAX_TICK_SECONDS } from '../data/constants';
 import { PARTICLE_IDS } from '../data/particles';
+import { offlineCap } from './progress';
 import type { GameState } from './state';
 import { productionRates } from './stats';
 
@@ -20,7 +21,7 @@ export function advance(state: GameState, seconds: number): GameState {
 
 /** Progress while the app was closed, capped at the offline limit. */
 export function advanceOffline(state: GameState, secondsAway: number): GameState {
-  return advance(state, Math.min(secondsAway, OFFLINE_CAP_SECONDS));
+  return advance(state, Math.min(secondsAway, offlineCap(state)));
 }
 
 function step(state: GameState, dt: number): GameState {

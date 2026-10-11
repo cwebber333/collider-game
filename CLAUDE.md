@@ -33,6 +33,7 @@ Solo hobby idle/incremental mobile game: a mysterious ancient particle collider.
 npm run typecheck   # tsc --noEmit
 npm test            # vitest (economy unit tests)
 npm run sim         # pacing simulation (player bot)
+npm run tune        # suggest Threshold Power requirements from the target timeline
 npx expo lint       # eslint
 npx expo start --web  # play in the laptop browser (fastest loop)
 npx expo start      # dev server; scan the QR code with Expo Go on Android
