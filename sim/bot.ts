@@ -8,7 +8,7 @@ import {
   apply,
   canAfford,
   canBreach,
-  maxBand,
+  bandCap,
   productionRates,
   upgradeCost,
   type Cost,
@@ -64,7 +64,7 @@ export function bestPlan(state: GameState, candidates: readonly UpgradeId[] = UP
   for (const upgrade of candidates) {
     const cost = upgradeCost(state, upgrade);
     if (!cost) continue;
-    for (let band = 1; band <= maxBand(state); band++) {
+    for (let band = 1; band <= bandCap(state); band++) {
       const seconds = timeToAfford(state, cost, band);
       if (seconds < (best?.seconds ?? Infinity)) best = { upgrade, band, seconds };
     }
@@ -166,7 +166,7 @@ function bandForAbsence(state: GameState, goal: Plan, main: Plan | null, seconds
   if (main && main.upgrade !== goal.upgrade) costs.push(upgradeCost(state, main.upgrade));
   let bestBand = goal.band;
   let bestScore = -1;
-  for (let band = 1; band <= maxBand(state); band++) {
+  for (let band = 1; band <= bandCap(state); band++) {
     const score = costs.reduce((sum, cost) => sum + (cost ? coverage(state, cost, band, seconds) : 0), 0);
     if (score > bestScore + 1e-9) {
       bestScore = score;

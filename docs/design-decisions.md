@@ -92,6 +92,23 @@ A running record of decisions made while shaping the game design. Newest at the 
 2. **One band per check-in.** Ring Speed for band *n + 1* costs band *n* particles, so you must sit at band *n* to buy the next one. Idle players gain at most one band per check-in, even in run 2 when everything is cheap. Spiral nodes (start at band 4, Band Cycle, Auto-Buy) would ease this.
 3. **Run 2 is already fast without Ring Schematics** (19–38% of run 1), because Index levels, Wellspring and breached Thresholds all carry over. Schematics could make run 2 trivial. Revisit Q3 (Wellspring kept) or make schematics nodes modest.
 
+## Round 9 — Answers to the Round 8 findings (2026-10-11)
+
+| Topic | Decision | Notes |
+|---|---|---|
+| Early pacing | **Exempt bands 1–4 from the 2× rule** | Keeps the spec targets (band 2 at ~2 min, T1 at 30–45 min). The 2× rule applies from band 5 on. Retune once the band-unlock model is settled |
+| Band unlocks | **Explore an IOM-style model**: no particle toll to unlock a band; Speed, Power and Detection upgrades limit how well you can farm higher bands | Options written up below; replaces "Ring Speed costs band n particles" if adopted |
+| Wellspring on Recalibrate | **Resets** (flips Q3) | Sim: keeping it made run 2 23% of run 1 (watching), resetting it 66%; resetting the Index only moved 23% → 32% |
+
+### Round 9b — Band model (2026-10-11)
+
+| Topic | Decision | Notes |
+|---|---|---|
+| Band unlocks | **Option B: open dial, Speed = beam energy** | No particle toll to unlock a band. Bands up to the next Threshold are open; Speed sets which run at full output (25% one band too high). Thresholds stay the hard gates, like IOM's Obelisk |
+| Band mixes | **Keep the overlap** | Particles span several bands; single-band ores in IOM feel limiting |
+| T1 / T3 | T1 **50**, T3 **1.2M** (Resonance reference too) | Puts T1 at ~33 min watched |
+| Priority | **Get to a playable build**, tune by playing | |
+
 ## Open questions
 - How do the four upgrade styles fit into one coherent structure without overload?
 - What makes the fusion theme concrete and different from AD's abstract dimensions?

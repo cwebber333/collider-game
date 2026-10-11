@@ -33,7 +33,7 @@ Three stats, all **purely upgradable**. There are no trade-offs: raising any sta
 
 | Stat | What it does | IOM counterpart | Fed by (later) |
 |---|---|---|---|
-| **Speed** | Upgrading raises your **max speed**. You then **dial the Ring to any speed band** you've reached, and each band produces its own group of particles | Choosing which floor to mine | Thresholds (§4) |
+| **Speed** | **Beam energy.** Every band up to the next Threshold is open; Speed decides how high a band runs at full output. Above that, output falls off sharply. Each band produces its own group of particles | Choosing which floor to mine | Thresholds (§4) |
 | **Power** | **Collision rate**: how fast particles are produced. Higher bands are "denser" and need more power to farm efficiently | Pickaxe damage vs. rock HP | Wellspring |
 | **Detection** | **Yield** per collision, the chance to catch **rare** particles, and the ability to see faint particles that only appear above a detection level | Loot / luck stats | Detector Array |
 
@@ -110,7 +110,7 @@ Self-contained side modes that rotate, for example one active at a time for abou
 
 | Layer | Name (placeholder) | Resets | Keeps | Earns |
 |---|---|---|---|---|
-| 1 | **Recalibrate** | Particles, collider upgrades | Index, schematics, Wellspring depth (TBD) | *Resonance* → Ring Schematics |
+| 1 | **Recalibrate** | Particles, collider upgrades | Index, schematics (Wellspring resets) | *Resonance* → Ring Schematics |
 | 2 | **Rebuild the Ring** | Layer 1 + Thresholds | Index, anomaly rewards | Rarer currency + new schematic branch |
 | 3 | TBD | Nearly everything | Meta-progress | Late-game; may never be built |
 

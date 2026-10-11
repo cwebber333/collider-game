@@ -17,7 +17,9 @@
 
 ## 2. Bands
 
-You can set the Ring to any band from 1 up to your **max band** (raised by Speed upgrades). Each band has:
+A band is the Ring's version of an IOM floor: a **beam-energy setting** you dial the Ring to. Every band up to the next unbreached Threshold is open; there is no cost to unlock a band. Each band has:
+
+- **Energy needed:** `2^(b − 1)`. Speed (beam energy) at or above it runs the band at **full output** (the band is *stable*). Below it, output falls off: `(energy ÷ needed)²`, so one band too high gives 25% and two bands give about 6%.
 
 - **Density:** how hard collisions are at that band. Higher density means fewer collisions for the same Power.
 - **Particle mix:** which particles are produced and in what share.
@@ -65,7 +67,7 @@ Thresholds are simply numbered power checks (T1, T2, T3…), with no special nam
 ## 3. Production
 
 ```
-collisions/sec   = Power ÷ density(selected band)
+collisions/sec   = Power ÷ density(selected band) × band efficiency (energy falloff, §2)
 particles/sec    = collisions/sec × Yield
 each particle    = particles/sec × its share in that band
 rare chance/coll = rare base chance × Sensitivity multiplier   (only if Sensitivity ≥ reveal level)
@@ -85,7 +87,7 @@ Every upgrade is a purchase with particles. **Costs shift to newer particles as 
 | **Beam Current** | Power | ×1.2 Power | The main progression stat |
 | **Collector Grid** | Yield | +0.25 Yield (additive) | Cheaper, feels good early |
 | **Sensitivity** | Detection | +20% rare chance; reveals rares at levels 1 / 5 / 10 | Positron / Pentaquark / Graviton |
-| **Ring Speed** | Speed | +1 max band | One-time purchase per band; blocked at Thresholds until breached |
+| **Ring Speed** | Speed | ×2^(1/3) ≈ +26% beam energy | 3 levels make one more band stable. Can't go past a Threshold's band until it's breached |
 
 **Cost pattern (draft):** `cost(level) = base × growth^level`, paid in the particles listed for that level range:
 
@@ -100,7 +102,7 @@ Every upgrade is a purchase with particles. **Costs shift to newer particles as 
 
 The other upgrades follow the same idea with different starting particles and growth rates, so different upgrades want different bands at any moment. That's where the "which band do I need?" decision comes from.
 
-**Ring Speed costs:** buying max band *n + 1* costs particles from band *n*, so you have to spend time farming at your current top band before pushing further.
+**Ring Speed costs:** the 3 levels that stabilize band *n + 1* cost particles from band *n* (the band just below), so you farm your top stable band, or reach up at reduced output, to push further.
 
 ---
 
@@ -120,13 +122,13 @@ The other upgrades follow the same idea with different starting particles and gr
 
 ## 6. Thresholds (power checks)
 
-Speed can't pass a Threshold until it's **breached**. Breaching happens once you've **reached the Threshold's band** and your **Power** meets the requirement. Then you tap *Breach*, which costs nothing and can't fail.
+Speed can't pass a Threshold until it's **breached**. Breaching happens once the Threshold's band is **stable** (enough Speed) and your **Power** meets the requirement. Then you tap *Breach*, which costs nothing and can't fail.
 
 | Threshold | After band | Power required (draft) | Unlocks |
 |---|---|---|---|
-| **T1** | 4 | 30 | Bands 5–8 · Particle Index buffs |
+| **T1** | 4 | 50 | Bands 5–8 · Particle Index buffs |
 | **T2** | 8 | 3,000 | Bands 9–12 · Wellspring |
-| **T3** | 12 | 2,000,000 | Recalibrate (prestige) · Ring Schematics |
+| **T3** | 12 | 1,200,000 | Recalibrate (prestige) · Ring Schematics |
 
 - The UI shows a progress bar (current Power ÷ required), so you always know how close you are.
 - Each breach reveals a **lore fragment**, usually a previous operator's note.
@@ -178,16 +180,16 @@ Unlocks at **T2**. It's a small upgrade panel for now, not yet its own mini-game
 | **Conduits** | ×1.15 Power multiplier per level | Band 9–12 particles |
 | **Stabilizers** | −4% band density per level (makes higher bands easier to farm) | Band 5–8 particles |
 
-**Kept through Recalibrate.** It acts as a permanent progression track, so each run starts stronger. Its costs grow steeply enough that later runs don't become trivial.
+**Resets on Recalibrate.** The sim showed that keeping it was the main reason run 2 went fast (23% of run 1 kept vs. 66% reset), leaving no room for Ring Schematics. Permanent Wellspring boosts come from schematics nodes instead (e.g. Wellspring +50%).
 
 ---
 
 ## 10. Recalibrate (prestige layer 1)
 
 - Unlocks at **T3**. Available any time after that.
-- **Resets:** particles, Beam Current, Collector Grid, Sensitivity, Ring Speed.
-- **Keeps:** breached Thresholds (no repeated power checks), Particle Index levels, Wellspring, Ring Schematics.
-- **Earns Resonance:** `Resonance = floor(10 × (peak Power this run ÷ 2,000,000)^0.4)`, so the first Recalibrate gives about 10.
+- **Resets:** particles, Beam Current, Collector Grid, Sensitivity, Ring Speed, Wellspring.
+- **Keeps:** breached Thresholds (no repeated power checks), Particle Index levels, Ring Schematics.
+- **Earns Resonance:** `Resonance = floor(10 × (peak Power this run ÷ 1,200,000)^0.4)`, so the first Recalibrate gives about 10.
 - The button always **shows the Resonance you'll get** before you confirm. Never a surprise, and always a net gain.
 
 ### Ring Schematics (MVP tree, ~20 nodes)
@@ -217,7 +219,7 @@ For an **engaged player** (checks in about once an hour while awake, buys the be
 | Band 12 / **T3** → first Recalibrate | ~1–1.5 days |
 | Second run back to T3 | ≤ 50% of the first run's time |
 
-**Smoothness rule:** time spent in each band grows by about 1.5× per band and **never jumps more than 2×** from one band to the next. The simulation flags any band that breaks this.
+**Smoothness rule:** time spent in each band (from stable to the next band stable) grows by about 1.5× per band and **never jumps more than 2×** from one band to the next. **Bands 1–4 are exempt** so the opening can hit both "band 2 at ~2 min" and "T1 at 30–45 min". The simulation flags any band from 5 on that breaks this.
 
 The simulation will also run an **idle player** (checks in every ~4–6 h) to make sure idle stays reasonable.
 
@@ -237,6 +239,6 @@ The simulation will also run an **idle player** (checks in every ~4–6 h) to ma
 
 - [x] **Q1. Offline cap:** **24 h**, raisable through progression.
 - [ ] **Q2. Pacing:** targets in §11 are the default until the simulation lets us feel them out. Also open: how many bands per region (currently 4)?
-- [x] **Q3. Wellspring on Recalibrate:** **kept** (recommended default; revisit if the simulation shows runs getting too fast).
+- [x] **Q3. Wellspring on Recalibrate:** **resets** (changed from kept after the sim; see the decisions log, Round 9).
 - [x] **Q4. Particle names:** real particles first (Known → Theorized → Impossible).
 - [x] **Q5. Region/Threshold names:** none needed. Thresholds are numbered power checks, like the Obelisk.

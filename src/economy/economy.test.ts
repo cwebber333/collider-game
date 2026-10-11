@@ -7,6 +7,8 @@ import {
   advance,
   advanceOffline,
   apply,
+  bandCap,
+  bandEfficiency,
   canBreach,
   density,
   indexLevel,
@@ -15,6 +17,7 @@ import {
   productionRates,
   rareChance,
   resonanceGain,
+  stableBand,
   upgradeCost,
   type GameState,
 } from './index';
@@ -23,6 +26,9 @@ import {
 function game(overrides: Partial<GameState> = {}): GameState {
   return { ...newGame(), ...overrides };
 }
+
+/** Ring Speed level that brings `band` up to full output (3 levels per band). */
+const speedFor = (band: number) => 3 * (band - 1);
 
 function withLevels(levels: Partial<GameState['levels']>, overrides: Partial<GameState> = {}): GameState {
   const base = game(overrides);
@@ -45,9 +51,9 @@ describe('data sanity', () => {
     }
   });
 
-  it('Ring Speed has one cost row per band', () => {
-    expect(UPGRADES.ringSpeed.costTiers).toHaveLength(UPGRADES.ringSpeed.maxLevel!);
-    expect(UPGRADES.ringSpeed.maxLevel).toBe(BANDS.length - 1);
+  it('Ring Speed has one cost tier per band and tops out at the last band', () => {
+    expect(UPGRADES.ringSpeed.costTiers).toHaveLength(BANDS.length - 1);
+    expect(UPGRADES.ringSpeed.maxLevel).toBe(speedFor(BANDS.length));
   });
 });
 
@@ -90,6 +96,28 @@ describe('production', () => {
   });
 });
 
+describe('Speed and band energy', () => {
+  it('runs band 1 at full output and higher bands at a falloff', () => {
+    const s = newGame();
+    expect(stableBand(s)).toBe(1);
+    expect(bandEfficiency(s, 1)).toBe(1);
+    expect(bandEfficiency(s, 2)).toBeCloseTo(0.25);
+    expect(bandEfficiency(s, 3)).toBeCloseTo(0.0625);
+  });
+
+  it('3 Ring Speed levels bring the next band to full output', () => {
+    expect(stableBand(withLevels({ ringSpeed: 2 }))).toBe(1);
+    expect(stableBand(withLevels({ ringSpeed: 3 }))).toBe(2);
+    expect(stableBand(withLevels({ ringSpeed: speedFor(4) }))).toBe(4);
+  });
+
+  it('off-band output shrinks with the falloff', () => {
+    const s = game({ selectedBand: 2 });
+    // Band 2: Power 1 ÷ density 1.8 × 25% efficiency; photon share 50%.
+    expect(productionRates(s).photon).toBeCloseTo((1 / 1.8) * 0.25 * 0.5);
+  });
+});
+
 describe('upgrades', () => {
   it('Beam Current costs photons first and raises Power ×1.2', () => {
     const cost = upgradeCost(newGame(), 'beamCurrent');
@@ -117,7 +145,8 @@ describe('upgrades', () => {
   });
 
   it('Ring Speed stops at an unbreached Threshold', () => {
-    const atT1 = withLevels({ ringSpeed: THRESHOLDS[0].afterBand - 1 });
+    const atT1 = withLevels({ ringSpeed: speedFor(THRESHOLDS[0].afterBand) });
+    expect(upgradeCost(withLevels({ ringSpeed: speedFor(THRESHOLDS[0].afterBand) - 1 }), 'ringSpeed')).not.toBeNull();
     expect(upgradeCost(atT1, 'ringSpeed')).toBeNull();
     expect(upgradeCost({ ...atT1, breached: 1 }, 'ringSpeed')).not.toBeNull();
   });
@@ -128,20 +157,23 @@ describe('thresholds', () => {
     const t1 = THRESHOLDS[0];
     const levelsForPower = Math.ceil(Math.log(t1.power) / Math.log(UPGRADES.beamCurrent.perLevel));
     expect(canBreach(withLevels({ beamCurrent: levelsForPower }))).toBe(false); // band too low
-    expect(canBreach(withLevels({ ringSpeed: t1.afterBand - 1 }))).toBe(false); // Power too low
+    expect(canBreach(withLevels({ ringSpeed: speedFor(t1.afterBand) }))).toBe(false); // Power too low
 
-    const ready = withLevels({ ringSpeed: t1.afterBand - 1, beamCurrent: levelsForPower });
+    const ready = withLevels({ ringSpeed: speedFor(t1.afterBand), beamCurrent: levelsForPower });
     expect(canBreach(ready)).toBe(true);
     expect(apply(ready, { type: 'breach' }).breached).toBe(1);
   });
 });
 
 describe('band selection', () => {
-  it('only allows reached bands', () => {
-    const s = withLevels({ ringSpeed: 2 });
-    expect(apply(s, { type: 'selectBand', band: 3 }).selectedBand).toBe(3);
-    expect(apply(s, { type: 'selectBand', band: 4 })).toBe(s);
+  it('opens every band up to the next Threshold', () => {
+    const s = newGame();
+    expect(bandCap(s)).toBe(THRESHOLDS[0].afterBand);
+    expect(apply(s, { type: 'selectBand', band: 4 }).selectedBand).toBe(4);
+    expect(apply(s, { type: 'selectBand', band: 5 })).toBe(s);
     expect(apply(s, { type: 'selectBand', band: 0 })).toBe(s);
+    expect(bandCap(game({ breached: 1 }))).toBe(THRESHOLDS[1].afterBand);
+    expect(bandCap(game({ breached: THRESHOLDS.length }))).toBe(BANDS.length);
   });
 });
 
@@ -178,7 +210,7 @@ describe('Recalibrate', () => {
     expect(resonanceGain(s)).toBe(0);
   });
 
-  it('resets the run but keeps Index, Wellspring and Thresholds', () => {
+  it('resets the run and the Wellspring but keeps Index and Thresholds', () => {
     const before = withLevels(
       { beamCurrent: 70, ringSpeed: 11, conduits: 5, stabilizers: 3 },
       {
@@ -200,8 +232,8 @@ describe('Recalibrate', () => {
     expect(after.levels.ringSpeed).toBe(0);
     expect(after.selectedBand).toBe(1);
     expect(after.lifetime.higgs).toBe(5_000);
-    expect(after.levels.conduits).toBe(5);
-    expect(after.levels.stabilizers).toBe(3);
+    expect(after.levels.conduits).toBe(0);
+    expect(after.levels.stabilizers).toBe(0);
     expect(after.breached).toBe(3);
   });
 });

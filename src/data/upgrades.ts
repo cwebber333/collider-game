@@ -90,26 +90,27 @@ export const UPGRADES: Record<UpgradeId, UpgradeDef> = {
   ringSpeed: {
     id: 'ringSpeed',
     name: 'Ring Speed',
-    description: '+1 max band. Buying band n + 1 costs particles from band n',
-    perLevel: 1,
-    maxLevel: 11, // max band 12 in the MVP
+    description: '+26% beam energy per level. Each band needs twice the energy of the one below',
+    perLevel: 2 ** (1 / 3), // 3 levels double the energy: one more band runs at full output
+    maxLevel: 33, // band 12 at full output in the MVP
     unlockAfterThresholds: 0,
-    // One level per tier: level L buys band L + 2 with band L + 1 particles.
+    // One tier per band: levels 3k to 3k + 2 bring band k + 2 up to full
+    // output, paid with particles from band k + 1 (the band just below it).
     costTiers: [
-      { fromLevel: 0, growth: 1, costs: [{ particle: 'photon', base: 80 }, { particle: 'electron', base: 25 }] },
-      { fromLevel: 1, growth: 1, costs: [{ particle: 'electron', base: 90 }, { particle: 'muon', base: 40 }] },
-      { fromLevel: 2, growth: 1, costs: [{ particle: 'electron', base: 520 }, { particle: 'muon', base: 370 }] },
-      { fromLevel: 3, growth: 1, costs: [{ particle: 'muon', base: 3_900 }, { particle: 'pion', base: 2_100 }] },
-      { fromLevel: 4, growth: 1, costs: [{ particle: 'pion', base: 13_000 }, { particle: 'kaon', base: 8_600 }] },
-      { fromLevel: 5, growth: 1, costs: [{ particle: 'kaon', base: 55_000 }, { particle: 'tau', base: 39_000 }] },
-      { fromLevel: 6, growth: 1, costs: [{ particle: 'tau', base: 250_000 }, { particle: 'jpsi', base: 170_000 }] },
-      { fromLevel: 7, growth: 1, costs: [{ particle: 'jpsi', base: 750_000 }, { particle: 'bmeson', base: 550_000 }] },
-      { fromLevel: 8, growth: 1, costs: [{ particle: 'bmeson', base: 2_700_000 }, { particle: 'zboson', base: 1_900_000 }] },
-      { fromLevel: 9, growth: 1, costs: [{ particle: 'zboson', base: 15_000_000 }, { particle: 'higgs', base: 13_000_000 }] },
-      { fromLevel: 10, growth: 1, costs: [{ particle: 'zboson', base: 80_000_000 }, { particle: 'higgs', base: 68_000_000 }] },
+      { fromLevel: 0, growth: 1.4, costs: [{ particle: 'photon', base: 18 }, { particle: 'electron', base: 5 }] },
+      { fromLevel: 3, growth: 1.4, costs: [{ particle: 'electron', base: 21 }, { particle: 'muon', base: 9 }] },
+      { fromLevel: 6, growth: 1.4, costs: [{ particle: 'electron', base: 120 }, { particle: 'muon', base: 85 }] },
+      { fromLevel: 9, growth: 1.4, costs: [{ particle: 'muon', base: 890 }, { particle: 'pion', base: 480 }] },
+      { fromLevel: 12, growth: 1.4, costs: [{ particle: 'pion', base: 3_000 }, { particle: 'kaon', base: 2_000 }] },
+      { fromLevel: 15, growth: 1.4, costs: [{ particle: 'kaon', base: 13_000 }, { particle: 'tau', base: 8_900 }] },
+      { fromLevel: 18, growth: 1.4, costs: [{ particle: 'tau', base: 57_000 }, { particle: 'jpsi', base: 39_000 }] },
+      { fromLevel: 21, growth: 1.4, costs: [{ particle: 'jpsi', base: 170_000 }, { particle: 'bmeson', base: 130_000 }] },
+      { fromLevel: 24, growth: 1.4, costs: [{ particle: 'bmeson', base: 620_000 }, { particle: 'zboson', base: 440_000 }] },
+      { fromLevel: 27, growth: 1.4, costs: [{ particle: 'zboson', base: 3_400_000 }, { particle: 'higgs', base: 3_000_000 }] },
+      { fromLevel: 30, growth: 1.4, costs: [{ particle: 'zboson', base: 18_000_000 }, { particle: 'higgs', base: 16_000_000 }] },
     ],
   },
-  // Wellspring (unlocks at Threshold 2). Kept through Recalibrate.
+  // Wellspring (unlocks at Threshold 2). Resets on Recalibrate.
   conduits: {
     id: 'conduits',
     name: 'Conduits',

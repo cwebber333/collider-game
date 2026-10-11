@@ -7,7 +7,7 @@ import {
   advance,
   apply,
   canRecalibrate,
-  maxBand,
+  stableBand,
   newGame,
   power,
   resonanceGain,
@@ -20,6 +20,8 @@ const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
 const MAX_SIM_SECONDS = 14 * DAY;
 const LAST_BAND = 12;
+/** The opening bands may jump more than 2× (design decision, Round 9). */
+const SMOOTH_FROM_BAND = 5;
 
 interface Player {
   name: string;
@@ -34,7 +36,7 @@ interface Player {
 const PLAYERS: Player[] = [
   // Never stops watching: shows the economy's own curve without check-in gaps.
   { name: 'Watching', openingSessionSeconds: Infinity, checkInEvery: MINUTE, awakeHours: 24 },
-  { name: 'Engaged', openingSessionSeconds: 30 * MINUTE, checkInEvery: HOUR, awakeHours: 16 },
+  { name: 'Engaged', openingSessionSeconds: 45 * MINUTE, checkInEvery: HOUR, awakeHours: 16 },
   { name: 'Idle', openingSessionSeconds: 10 * MINUTE, checkInEvery: 5 * HOUR, awakeHours: 16 },
 ];
 
@@ -66,7 +68,7 @@ function play(player: Player, start: GameState, t0: number, done: (s: GameState)
   let t = t0;
 
   const record = (s: GameState) => {
-    for (let b = 1; b <= maxBand(s); b++) {
+    for (let b = 1; b <= stableBand(s); b++) {
       if (!log.bandReached.has(b)) {
         log.bandReached.set(b, t - t0);
         log.powerAtBand.set(b, power(s));
@@ -127,7 +129,7 @@ function reportRun(title: string, log: RunLog, endLabel: string) {
     const inBand = reached !== undefined && leave !== undefined ? leave - reached : undefined;
     let ratio = '';
     let flag = '';
-    if (inBand !== undefined && prev !== undefined && prev > 0) {
+    if (inBand !== undefined && prev !== undefined && prev > 0 && b >= SMOOTH_FROM_BAND) {
       const r = inBand / prev;
       ratio = r.toFixed(2);
       if (r > 2) flag = '  << WALL (>2×)';
@@ -168,7 +170,7 @@ function simulate(player: Player) {
   const gain = resonanceGain(run1.state);
   const after = apply(run1.state, { type: 'recalibrate' });
   console.log(`\n  Recalibrate: +${gain} Resonance (peak Power ${num(run1.state.peakPower)})`);
-  const run2 = play(player, after, run1.t, (s) => maxBand(s) >= LAST_BAND);
+  const run2 = play(player, after, run1.t, (s) => stableBand(s) >= LAST_BAND);
   reportRun('Run 2 (no Ring Schematics yet)', run2.log, `Band ${LAST_BAND} reached`);
   if (l.end && run2.log.end) {
     console.log(`  Run 2 / run 1: ${(run2.log.end / l.end * 100).toFixed(0)}%  (target ≤ 50%)`);

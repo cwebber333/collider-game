@@ -10,8 +10,8 @@ import {
 import type { ParticleId } from '../data/particles';
 import { THRESHOLDS, type ThresholdDef } from '../data/thresholds';
 import { UPGRADES, type UpgradeId } from '../data/upgrades';
-import { newGame, zeroLevels, type GameState } from './state';
-import { buffBonus, buffReduction, maxBand, power } from './stats';
+import { newGame, type GameState } from './state';
+import { bandCap, buffBonus, buffReduction, power, stableBand } from './stats';
 
 /**
  * A "discriminated union": each action is an object whose `type` field says
@@ -37,10 +37,10 @@ export function isMaxed(state: GameState, id: UpgradeId): boolean {
   return max !== undefined && state.levels[id] >= max;
 }
 
-/** The Threshold currently stopping Ring Speed, if any. */
+/** The Threshold holding back Ring Speed: its band already runs at full output. */
 export function blockingThreshold(state: GameState): ThresholdDef | undefined {
-  const index = THRESHOLDS.findIndex((t) => t.afterBand === maxBand(state));
-  return index >= state.breached ? THRESHOLDS[index] : undefined;
+  const t = THRESHOLDS[state.breached];
+  return t && stableBand(state) >= t.afterBand ? t : undefined;
 }
 
 /** Cost of the next level, or null if it can't be bought (locked, maxed, blocked). */
@@ -102,11 +102,11 @@ export function thresholdPowerRequired(state: GameState, threshold: ThresholdDef
   return threshold.power * buffReduction(state, 'thresholdReq');
 }
 
-/** Need to have reached the Threshold's band and to have enough Power. */
+/** Needs the Threshold's band at full output and enough Power. */
 export function canBreach(state: GameState): boolean {
   const t = nextThreshold(state);
   if (!t) return false;
-  return maxBand(state) >= t.afterBand && power(state) >= thresholdPowerRequired(state, t);
+  return stableBand(state) >= t.afterBand && power(state) >= thresholdPowerRequired(state, t);
 }
 
 // ---------- Recalibrate ----------
@@ -122,14 +122,12 @@ export function resonanceGain(state: GameState): number {
   return Math.floor(base * (1 + buffBonus(state, 'resonance')));
 }
 
-/** Resets particles and collider upgrades; keeps Index, Wellspring, Thresholds. */
+/** Resets particles and all upgrades (Wellspring too); keeps Index and Thresholds. */
 function recalibrate(state: GameState): GameState {
   if (!canRecalibrate(state)) return state;
-  const levels = { ...zeroLevels(), conduits: state.levels.conduits, stabilizers: state.levels.stabilizers };
   const next: GameState = {
     ...newGame(),
     lifetime: state.lifetime,
-    levels,
     breached: state.breached,
     resonance: state.resonance + resonanceGain(state),
     recalibrations: state.recalibrations + 1,
@@ -147,7 +145,7 @@ export function apply(state: GameState, action: Action): GameState {
     case 'buy':
       return buy(state, action.upgrade);
     case 'selectBand':
-      if (!Number.isInteger(action.band) || action.band < 1 || action.band > maxBand(state)) return state;
+      if (!Number.isInteger(action.band) || action.band < 1 || action.band > bandCap(state)) return state;
       return { ...state, selectedBand: action.band };
     case 'breach':
       return canBreach(state) ? { ...state, breached: state.breached + 1 } : state;

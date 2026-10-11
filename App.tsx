@@ -1,20 +1,56 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { useGame } from './src/game/useGame';
+import { BandDial, ParticlesCard, StatsHeader } from './src/ui/collider';
+import { AwayCard, DevTools } from './src/ui/misc';
+import { IndexCard } from './src/ui/particle-index';
+import { LoreCard, RecalibrateCard, ThresholdCard } from './src/ui/progress';
+import { colors, space } from './src/ui/theme';
+import { UpgradesCard, WellspringCard } from './src/ui/upgrades';
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <SafeAreaProvider>
+      <StatusBar style="light" />
+      <SafeAreaView style={styles.screen}>
+        <Game />
+      </SafeAreaView>
+    </SafeAreaProvider>
+  );
+}
+
+function Game() {
+  const { state, dispatch, away, dismissAway, skipTime, resetGame } = useGame();
+  if (!state) {
+    return (
+      <View style={styles.loading}>
+        <ActivityIndicator color={colors.accent} />
+      </View>
+    );
+  }
+  const props = { state, dispatch };
+  return (
+    <ScrollView contentContainerStyle={styles.content}>
+      <Text style={styles.title}>IDLE RING</Text>
+      {away && <AwayCard report={away} onDismiss={dismissAway} />}
+      <StatsHeader state={state} />
+      <BandDial {...props} />
+      <ParticlesCard state={state} />
+      <ThresholdCard {...props} />
+      <UpgradesCard {...props} />
+      <WellspringCard {...props} />
+      <RecalibrateCard {...props} />
+      <IndexCard state={state} />
+      <LoreCard state={state} />
+      {__DEV__ && <DevTools skipTime={skipTime} resetGame={resetGame} />}
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  screen: { flex: 1, backgroundColor: colors.bg },
+  loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  content: { padding: space.lg, gap: space.md, maxWidth: 640, width: '100%', alignSelf: 'center' },
+  title: { color: colors.muted, fontSize: 13, fontWeight: '700', letterSpacing: 6, textAlign: 'center' },
 });

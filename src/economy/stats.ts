@@ -5,15 +5,46 @@ import {
   BASE_POWER,
   BASE_YIELD,
   DENSITY_GROWTH,
+  ENERGY_PER_BAND,
   INDEX_BUFFS_AFTER_THRESHOLDS,
   INDEX_LEVEL_GROWTH,
+  OFF_BAND_EXPONENT,
 } from '../data/constants';
 import { PARTICLE_IDS, PARTICLES, type BuffKind, type ParticleId } from '../data/particles';
+import { THRESHOLDS } from '../data/thresholds';
 import { UPGRADES } from '../data/upgrades';
 import { zeroParticles, type GameState, type ParticleAmounts } from './state';
 
-export function maxBand(state: GameState): number {
-  return 1 + state.levels.ringSpeed;
+/** Rounding slack so 3 levels of ×2^(1/3) count as exactly ×2. */
+const EPSILON = 1e-9;
+
+// ---------- Bands ----------
+
+/** Highest band the dial can reach: the band before the next unbreached Threshold. */
+export function bandCap(state: GameState): number {
+  return THRESHOLDS[state.breached]?.afterBand ?? BANDS.length;
+}
+
+/** Beam energy from Ring Speed. */
+export function energy(state: GameState): number {
+  return UPGRADES.ringSpeed.perLevel ** state.levels.ringSpeed;
+}
+
+export function energyNeeded(band: number): number {
+  return ENERGY_PER_BAND ** (band - 1);
+}
+
+/** Share of full output at a band (1 when the beam has enough energy). */
+export function bandEfficiency(state: GameState, band: number): number {
+  const ratio = energy(state) / energyNeeded(band);
+  return ratio >= 1 - EPSILON ? 1 : ratio ** OFF_BAND_EXPONENT;
+}
+
+/** Highest band running at full output (the "stable" band). */
+export function stableBand(state: GameState): number {
+  let band = 1;
+  while (band < BANDS.length && bandEfficiency(state, band + 1) === 1) band++;
+  return band;
 }
 
 export function bandDef(band: number): BandDef {
@@ -34,6 +65,12 @@ export function indexLevel(state: GameState, id: ParticleId): number {
     need *= INDEX_LEVEL_GROWTH;
   }
   return level;
+}
+
+/** Index level plus progress toward the next one. */
+export function indexProgress(state: GameState, id: ParticleId): { level: number; collected: number; next: number } {
+  const level = indexLevel(state, id);
+  return { level, collected: state.lifetime[id], next: PARTICLES[id].indexBase * INDEX_LEVEL_GROWTH ** level };
 }
 
 export function indexBuffsActive(state: GameState): boolean {
@@ -89,8 +126,9 @@ export function density(state: GameState, band: number): number {
   return DENSITY_GROWTH ** (band - 1) * stabilized;
 }
 
+/** Collisions per second, after the off-band energy penalty. */
 export function collisionsPerSecond(state: GameState, band: number): number {
-  return power(state) / density(state, band);
+  return (power(state) / density(state, band)) * bandEfficiency(state, band);
 }
 
 /** Chance per collision of the band's rare particle (0 if hidden or none). */
