@@ -2,11 +2,14 @@
 // on time spent away. Screens read `state` and call `dispatch`.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
-import { PARTICLE_IDS } from '../data/particles';
+import { continueAutoPlay, startAutoPlay, type AutoPlayGoal } from '../bot/autoplay';
+import { PARTICLE_IDS, type ParticleId } from '../data/particles';
+import type { UpgradeId } from '../data/upgrades';
 import {
   advance,
   advanceOffline,
   apply,
+  upgradeCost,
   zeroParticles,
   type Action,
   type GameState,
@@ -24,6 +27,29 @@ export interface AwayReport {
   gained: ParticleAmounts;
 }
 
+/** Dev tools: what auto-play is doing or just did. */
+export interface AutoPlayStatus {
+  goal: AutoPlayGoal;
+  running: boolean;
+  /** Game seconds the bot has played. */
+  seconds: number;
+  buys: Partial<Record<UpgradeId, number>>;
+  gaveUp: boolean;
+}
+
+/** Buys without spending anything (dev "free buys" mode). */
+function buyFree(state: GameState, upgrade: UpgradeId): GameState {
+  const cost = upgradeCost(state, upgrade);
+  if (!cost) return state;
+  // Top up whatever's missing, buy, then put the balances back as they were.
+  const particles = { ...state.particles };
+  for (const [id, amount] of Object.entries(cost) as [ParticleId, number][]) {
+    particles[id] = Math.max(particles[id], amount);
+  }
+  const bought = apply({ ...state, particles }, { type: 'buy', upgrade });
+  return { ...bought, particles: state.particles };
+}
+
 function awayReport(before: GameState, after: GameState, seconds: number): AwayReport {
   const gained = zeroParticles();
   for (const id of PARTICLE_IDS) gained[id] = after.particles[id] - before.particles[id];
@@ -38,6 +64,10 @@ export function useGame() {
   // dispatch both read and write `stateRef` so no update is ever lost.
   const stateRef = useRef<GameState | null>(null);
   const lastTick = useRef(0); // set when the save finishes loading
+  const [freeBuys, setFreeBuysState] = useState(false);
+  const freeBuysRef = useRef(false);
+  const [autoPlay, setAutoPlay] = useState<AutoPlayStatus | null>(null);
+  const autoPlaying = useRef(false);
 
   const commit = useCallback((next: GameState) => {
     stateRef.current = next;
@@ -76,6 +106,7 @@ export function useGame() {
   useEffect(() => {
     if (!loaded) return;
     const tick = setInterval(() => {
+      if (autoPlaying.current) return; // the bot owns the clock while it plays
       const now = Date.now();
       const seconds = (now - lastTick.current) / 1000;
       lastTick.current = now;
@@ -97,8 +128,9 @@ export function useGame() {
   const dispatch = useCallback(
     (action: Action) => {
       const current = stateRef.current;
-      if (!current) return;
-      const next = apply(current, action);
+      if (!current || autoPlaying.current) return;
+      const next =
+        freeBuysRef.current && action.type === 'buy' ? buyFree(current, action.upgrade) : apply(current, action);
       if (next === current) return;
       commit(next);
       // Save right after big moments so they can't be lost.
@@ -118,5 +150,49 @@ export function useGame() {
     commit(fresh);
   }, [commit]);
 
-  return { state, dispatch, away, dismissAway: () => setAway(null), skipTime, resetGame };
+  /** Dev only: purchases cost nothing while on. */
+  const setFreeBuys = useCallback((on: boolean) => {
+    freeBuysRef.current = on;
+    setFreeBuysState(on);
+  }, []);
+
+  /** Dev only: let the bot play from here until the goal. */
+  const runAutoPlay = useCallback(
+    async (goal: AutoPlayGoal) => {
+      const start = stateRef.current;
+      if (!start || autoPlaying.current) return;
+      autoPlaying.current = true;
+      let run = startAutoPlay(start, goal);
+      const status = (running: boolean): AutoPlayStatus => ({
+        goal,
+        running,
+        seconds: run.seconds,
+        buys: run.buys,
+        gaveUp: run.gaveUp,
+      });
+      while (!run.done) {
+        run = continueAutoPlay(run);
+        setAutoPlay(status(true));
+        // Let the screen redraw between chunks.
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      }
+      commit(run.state);
+      saveGame(run.state);
+      lastTick.current = Date.now();
+      autoPlaying.current = false;
+      setAutoPlay(status(false));
+    },
+    [commit],
+  );
+
+  return {
+    state,
+    dispatch,
+    away,
+    dismissAway: () => setAway(null),
+    dev: { skipTime, resetGame, freeBuys, setFreeBuys, autoPlay, runAutoPlay },
+  };
 }
+
+/** The dev-tools controls returned by useGame. */
+export type DevControls = ReturnType<typeof useGame>['dev'];

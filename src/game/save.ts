@@ -41,6 +41,7 @@ export async function deleteSave(): Promise<void> {
 
 /** Fills in fields added since the save was written, so old saves keep loading. */
 function upgradeSave(saved: Partial<GameState>): GameState {
+  renameParticle(saved, 'jpsi', 'psi'); // renamed 2026-10-11
   const fresh = newGame();
   return {
     ...fresh,
@@ -49,4 +50,16 @@ function upgradeSave(saved: Partial<GameState>): GameState {
     lifetime: { ...fresh.lifetime, ...saved.lifetime },
     levels: { ...fresh.levels, ...saved.levels },
   };
+}
+
+/** Moves a renamed particle's balances to its new id (mutates the parsed save). */
+function renameParticle(saved: Partial<GameState>, oldId: string, newId: string): void {
+  for (const amounts of [saved.particles, saved.lifetime]) {
+    // A loosely-typed view, since the old id isn't a ParticleId anymore.
+    const loose = amounts as Record<string, number> | undefined;
+    if (loose && oldId in loose) {
+      loose[newId] = (loose[newId] ?? 0) + loose[oldId];
+      delete loose[oldId];
+    }
+  }
 }

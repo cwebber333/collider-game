@@ -29,16 +29,19 @@ A band is the Ring's version of an IOM floor: a **beam-energy setting** you dial
 
 Particles **overlap across neighboring bands**, like IOM ores spanning several floors. Moving up a band never makes your current currencies disappear, which helps prevent walls.
 
-### Particle naming: Known → Theorized → Impossible
+### Particle naming: Known → Theorized → Fringe → Impossible
 
-The MVP particles are **real physics particles**, roughly **in order of mass**. That matches the physics: heavier particles need higher collision energy, so faster bands produce them. As the player goes deeper, particles move from real to **theorized** (predicted but never observed) to fully **invented**. The drift from real to unreal is part of the mystery.
+The MVP particles are **real physics particles**, roughly **in order of mass**. That matches the physics: heavier particles need higher collision energy, so faster bands produce them. Each outer Ring (GDD §4a) drifts further from reality. The drift from real to unreal is part of the mystery.
 
-| Stage | Bands | Particles |
+| Stage | Ring / bands | Particles |
 |---|---|---|
-| **Known** | 1–12 (MVP) | Real particles (below) |
+| **Known** | Inner Ring, 1–12 (MVP) | Real particles (below) |
 | *Turning point* | 11–12 rare | **Graviton**: theorized, never observed… until the Ring finds it |
-| **Theorized** | Post-MVP region(s) | e.g. axion, tachyon, sterile neutrino, magnetic monopole, dark photon |
-| **Impossible** | Later | Invented particles (name brainstorm later) |
+| **Theorized** | Second Ring, 13–24 | Predicted but never observed: axion, sterile neutrino, magnetic monopole, dark photon… |
+| **Fringe** | Third Ring, 25–36 | Speculative ideas: tachyon, preon, strangelet, Q-ball… |
+| **Impossible / fantasy** | Outer Ring, 37–48 | Completely made up, with scientific-sounding names (brainstorm later) |
+
+**Names stay simple:** no slashes or punctuation (see the decisions log).
 
 | Band | Group | Particle mix (%) | Rare |
 |---|---|---|---|
@@ -49,16 +52,16 @@ The MVP particles are **real physics particles**, roughly **in order of mass**. 
 | — | **Threshold 1** | | |
 | 5 | 2 | Muon 30 · Pion 50 · Kaon 20 | – |
 | 6 | 2 | Pion 30 · Kaon 50 · Tau 20 | – |
-| 7 | 2 | Kaon 30 · Tau 50 · J/psi 20 | Pentaquark |
-| 8 | 2 | Tau 30 · J/psi 50 · B meson 20 | Pentaquark |
+| 7 | 2 | Kaon 30 · Tau 50 · Psi 20 | Pentaquark |
+| 8 | 2 | Tau 30 · Psi 50 · B meson 20 | Pentaquark |
 | — | **Threshold 2** | | |
-| 9 | 3 | J/psi 30 · B meson 50 · Z boson 20 | – |
+| 9 | 3 | Psi 30 · B meson 50 · Z boson 20 | – |
 | 10 | 3 | B meson 30 · Z boson 50 · Higgs 20 | – |
 | 11 | 3 | Z boson 40 · Higgs 60 | Graviton |
 | 12 | 3 | Z boson 20 · Higgs 80 | Graviton |
 | — | **Threshold 3** | | |
 
-Approximate real masses for flavor text: photon 0 · electron 0.511 MeV · muon 106 MeV · pion 140 MeV · kaon 494 MeV · tau 1.78 GeV · J/psi 3.10 GeV · pentaquark ~4.4 GeV · B meson 5.28 GeV · Z boson 91.2 GeV · Higgs 125 GeV.
+Approximate real masses for flavor text: photon 0 · electron 0.511 MeV · muon 106 MeV · pion 140 MeV · kaon 494 MeV · tau 1.78 GeV · psi (also called J/psi) 3.10 GeV · pentaquark ~4.4 GeV · B meson 5.28 GeV · Z boson 91.2 GeV · Higgs 125 GeV.
 
 Thresholds are simply numbered power checks (T1, T2, T3…), with no special names. Bands are grouped only by which Threshold they sit before or after.
 
@@ -116,7 +119,7 @@ The other upgrades follow the same idea with different starting particles and gr
 
 - Before the reveal level, the rare **doesn't appear at all**. The UI can tease it ("faint signature detected…") for mystery.
 - Rares accumulate as a steady **expected-value trickle** (fractional amounts; the UI rounds down), not random rolls. Same result online and offline, and no bad-luck streaks.
-- Rares are spent on a few special upgrades and are worth a lot in the Particle Index.
+- For now rares only feed the Particle Index (like veins in IOM: a rich find on certain bands). **How rares get spent is decided later**; no rare-cost upgrades yet.
 
 ---
 
@@ -159,7 +162,7 @@ Speed can't pass a Threshold until it's **breached**. Breaching happens once the
 | Pion | −3% Beam Current costs |
 | Kaon | +5% Power |
 | Tau | +5% rare chance |
-| J/psi | +5% Wellspring output |
+| Psi | +5% Wellspring output |
 | B meson | +5% Yield |
 | Z boson | −3% Threshold Power requirements |
 | Higgs boson | +5% Resonance from Recalibrate |
@@ -192,7 +195,9 @@ Unlocks at **T2**. It's a small upgrade panel for now, not yet its own mini-game
 - **Earns Resonance:** `Resonance = floor(10 × (peak Power this run ÷ 1,200,000)^0.4)`, so the first Recalibrate gives about 10.
 - The button always **shows the Resonance you'll get** before you confirm. Never a surprise, and always a net gain.
 
-### Ring Schematics (MVP tree, ~20 nodes)
+### Ring Schematics (first ~20 nodes of a large tree)
+
+The long-term goal is a **large, branching tree like CIFI's Loop Mods**, not a small skill tree like IOM's. That's why there's no separate skill tree: Schematics is the one big tree, and new branches arrive at later Thresholds (see the [Threshold Roadmap](threshold-roadmap.md)).
 
 Three branches, bought with Resonance:
 

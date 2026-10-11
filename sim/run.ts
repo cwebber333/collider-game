@@ -13,7 +13,7 @@ import {
   resonanceGain,
   type GameState,
 } from '../src/economy';
-import { checkIn, goalPlan } from './bot';
+import { checkIn, goalPlan } from '../src/bot/bot';
 
 const MINUTE = 60;
 const HOUR = 60 * MINUTE;

@@ -21,7 +21,7 @@ export default function App() {
 }
 
 function Game() {
-  const { state, dispatch, away, dismissAway, skipTime, resetGame } = useGame();
+  const { state, dispatch, away, dismissAway, dev } = useGame();
   if (!state) {
     return (
       <View style={styles.loading}>
@@ -32,18 +32,19 @@ function Game() {
   const props = { state, dispatch };
   return (
     <ScrollView contentContainerStyle={styles.content}>
-      <Text style={styles.title}>IDLE RING</Text>
+      <Text style={styles.title}>THE LOST RING</Text>
+      {dev.freeBuys && <Text style={styles.devBanner}>FREE BUYS ON (dev tools)</Text>}
       {away && <AwayCard report={away} onDismiss={dismissAway} />}
       <StatsHeader state={state} />
       <BandDial {...props} />
       <ParticlesCard state={state} />
       <ThresholdCard {...props} />
-      <UpgradesCard {...props} />
-      <WellspringCard {...props} />
+      <UpgradesCard {...props} freeBuys={dev.freeBuys} />
+      <WellspringCard {...props} freeBuys={dev.freeBuys} />
       <RecalibrateCard {...props} />
       <IndexCard state={state} />
       <LoreCard state={state} />
-      {__DEV__ && <DevTools skipTime={skipTime} resetGame={resetGame} />}
+      {__DEV__ && <DevTools state={state} dev={dev} />}
     </ScrollView>
   );
 }
@@ -53,4 +54,5 @@ const styles = StyleSheet.create({
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   content: { padding: space.lg, gap: space.md, maxWidth: 640, width: '100%', alignSelf: 'center' },
   title: { color: colors.muted, fontSize: 13, fontWeight: '700', letterSpacing: 6, textAlign: 'center' },
+  devBanner: { color: colors.warn, fontSize: 12, fontWeight: '700', textAlign: 'center' },
 });

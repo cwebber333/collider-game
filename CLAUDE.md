@@ -1,4 +1,4 @@
-# Idle Ring
+# The Lost Ring
 
 Solo hobby idle/incremental mobile game: a mysterious ancient particle collider. React Native + Expo (TypeScript), **Android first** (the developer is on Windows with an Android phone; iOS later via EAS cloud builds).
 
@@ -7,6 +7,7 @@ Solo hobby idle/incremental mobile game: a mysterious ancient particle collider.
 ## Design docs (read before changing game logic)
 - `docs/GDD.md`: game design document (pillars, systems, MVP scope)
 - `docs/collider-spec.md`: core loop numbers and formulas for the MVP
+- `docs/threshold-roadmap.md`: every Threshold across all four Rings and what it unlocks
 - `docs/design-decisions.md`: log of decisions and why
 - `docs/research/inspiration-games.md`: Idle Obelisk Miner, Cell: Idle Factory Incremental, Cave Heroes
 
@@ -21,9 +22,10 @@ Solo hobby idle/incremental mobile game: a mysterious ancient particle collider.
 ## Code layout
 - `src/economy/`: pure TypeScript game logic. **No React/React Native imports.** `state + elapsed time → state`, `state + action → state`.
 - `src/data/`: all tunable numbers (bands, particles, upgrades, thresholds). Balance by editing data, not logic.
-- `sim/`: headless simulation that runs the economy module with a player bot and reports pacing.
+- `src/bot/`: the player bot (pure TS, no React). Used by the sim and by the dev-tools auto-play.
+- `sim/`: headless simulation that runs the economy module with the bot and reports pacing.
 - `src/game/`: React glue: `useGame` (clock, autosave, offline catch-up) and `save.ts` (AsyncStorage).
-- `src/ui/` + `App.tsx`: React Native screens that only read state and dispatch actions. Dev-only tools (time skip, reset) show under `__DEV__`.
+- `src/ui/` + `App.tsx`: React Native screens that only read state and dispatch actions. Dev-only tools (free buys, bot auto-play, time skip, reset) show under `__DEV__`.
 - Single screen for now; move to Expo Router (`src/app/`) when a second screen is needed.
 
 ## Commands

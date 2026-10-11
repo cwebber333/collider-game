@@ -19,7 +19,8 @@ import { Button, Card } from './common';
 import { formatCost, formatRate } from './format';
 import { colors, mono, space } from './theme';
 
-type Props = { state: GameState; dispatch: (action: Action) => void };
+/** `freeBuys`: dev mode where purchases cost nothing. */
+type Props = { state: GameState; dispatch: (action: Action) => void; freeBuys?: boolean };
 
 const COLLIDER: UpgradeId[] = ['ringSpeed', 'beamCurrent', 'collectorGrid', 'sensitivity'];
 const WELLSPRING: UpgradeId[] = ['conduits', 'stabilizers'];
@@ -60,10 +61,10 @@ function unavailableReason(state: GameState, id: UpgradeId): string | null {
   return null;
 }
 
-function UpgradeRow({ state, dispatch, id }: Props & { id: UpgradeId }) {
+function UpgradeRow({ state, dispatch, freeBuys, id }: Props & { id: UpgradeId }) {
   const def = UPGRADES[id];
   const cost = upgradeCost(state, id);
-  const affordable = cost !== null && canAfford(state, cost);
+  const affordable = cost !== null && (freeBuys || canAfford(state, cost));
   const reason = unavailableReason(state, id);
   return (
     <View style={styles.row}>
@@ -73,19 +74,18 @@ function UpgradeRow({ state, dispatch, id }: Props & { id: UpgradeId }) {
         </Text>
         <Text style={styles.effect}>{currentEffect(state, id)}</Text>
         <Text style={styles.description}>{def.description}</Text>
-        {cost ? (
-          <View style={styles.costs}>
-            {(Object.entries(cost) as [ParticleId, number][]).map(([pid, amount]) => (
-              <Text key={pid} style={[styles.cost, { color: state.particles[pid] >= amount ? colors.good : colors.bad }]}>
-                {PARTICLES[pid].symbol} {formatCost(amount)}
-              </Text>
-            ))}
-          </View>
-        ) : (
-          reason && <Text style={styles.reason}>{reason}</Text>
-        )}
+        {!cost && reason && <Text style={styles.reason}>{reason}</Text>}
       </View>
-      <Button label="Buy" small disabled={!affordable} onPress={() => dispatch({ type: 'buy', upgrade: id })} />
+      {/* Cost sits right under the button that pays it. */}
+      <View style={styles.buy}>
+        <Button label="Buy" small disabled={!affordable} onPress={() => dispatch({ type: 'buy', upgrade: id })} />
+        {cost &&
+          (Object.entries(cost) as [ParticleId, number][]).map(([pid, amount]) => (
+            <Text key={pid} style={[styles.cost, { color: state.particles[pid] >= amount ? colors.good : colors.bad }]}>
+              {PARTICLES[pid].symbol} {formatCost(amount)}
+            </Text>
+          ))}
+      </View>
     </View>
   );
 }
@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
   level: { color: colors.muted, fontWeight: '400', fontSize: 13 },
   effect: { color: colors.accent, fontSize: 13 },
   description: { color: colors.muted, fontSize: 12 },
-  costs: { flexDirection: 'row', flexWrap: 'wrap', gap: space.md, marginTop: 2 },
+  buy: { alignItems: 'flex-end', gap: 2, minWidth: 84 },
   cost: { fontFamily: mono, fontSize: 13 },
   reason: { color: colors.warn, fontSize: 12, marginTop: 2 },
   tease: { color: colors.muted, fontSize: 13, fontStyle: 'italic' },

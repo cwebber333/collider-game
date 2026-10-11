@@ -14,16 +14,23 @@ Project constraints (from the brief):
 
 **Systems unlock gradually as the Obelisk level rises:**
 
-| Obelisk lvl | Unlock |
+| Obelisk lvl | Unlock (per the [Obelisk wiki page](https://shminer.miraheze.org/wiki/Obelisk), checked 2026-10-11) |
 |---|---|
+| 2 | Drones, Experience Bomb |
+| 4 | Skill Tree |
 | 10 | Challenges |
+| 12 | Contracts |
 | 15 | Cards |
 | 17 | Pets |
-| 18 | Drone fuel (offline/idle automation) |
-| 19 | Construct (first big gate) |
 | 23 | Stargazing |
-| 37 / World 2 | Fishing, Archaeology, Contracts |
-| Later | Arcanist (essence → runes → spells), Worlds 3–4 |
+| 30 | Archaeology |
+| 42 | World 3 Monument |
+| 64 | World 4 Monument |
+| 70 | Arcanist |
+
+**How the Obelisk works:** it's a fight. Your base damage must beat its **armor** or you deal nothing; past that, damage chips at its **health**, and damage is *saved across attempts* (30 s fights, 20 min cooldown). Health and armor grow ~2.8× per level up to 60, then much faster. Each defeat gives +1 Obelisk level, +5 player level cap, gems, and sometimes an unlock. The wiki tables go to level 75.
+
+**Worlds** (per the [Floors](https://shminer.miraheze.org/wiki/Floors) and [Construct](https://shminer.miraheze.org/wiki/Construct) pages): 4 worlds of floors: W1 = floors 1–42, W2 = 43–72, W3 = 73–102, W4 = 103–132. Each world is split into themed **zones**, each with its own **vein** type; ores come in overlapping pairs (80/20 on a pair's first floor, 50/50 on the next). You advance a floor by clearing it a number of times (floor × 5 in W1, × 15 in W2, × 35 in W3, × 105 in W4). A new world is opened by building its **monument** in Construct, paid in gems + that world's veins (W3 and W4 monuments also need Obelisk 42 / 64). W3 and W4 carry game-speed debuffs (−30%, −80%), the latter reduced by World Quests. New worlds also bring new systems (W2: Stargazing, Archaeology, Fishing per the progression guide).
 
 **Systems that boost each other (the part you like):**
 - **Stargazing:** stars spawn on mining floors (the floor rotates every 30 min). You tap them, or later auto-catch them. Each of the 23 stars buffs a *different* system: pickaxe damage, crafting cost, prestige points, pet level cap, fishing income, and so on. Upgrading a star makes its buff stronger.
@@ -31,7 +38,7 @@ Project constraints (from the brief):
 - **Archaeology:** fragments and loot mods, with its own XP.
 - **Cards and Statues:** gilding cards makes statues stronger, and statues give permanent multipliers.
 
-**Prestige:** resets Obelisk progress and gives prestige points / **artifacts**. You *keep* permanent upgrades, pet levels, statues, cards and the skill tree, so each run is faster. Players say prestige "plays with a different strategy" each time.
+**Prestige:** per the [Prestige wiki page](https://shminer.miraheze.org/wiki/Prestige), it "resets player level, gold, ores, bars, contract completions and points, and all upgrades" and gives Prestige Points for Artifacts and gilding Cards. Relics, artifacts, veins, drone points, challenge progress and items are kept. **Obelisk progress is kept** (not in the reset list; confirmed by the developer from play). *An earlier version of these notes wrongly said prestige resets the Obelisk.*
 
 **Pacing:** players warn against rushing ahead. Unlocking World 3 early comes with a −30% game-speed penalty, which is a deliberate way of saying "you're not ready yet."
 
@@ -55,6 +62,8 @@ Project constraints (from the brief):
 - **Loops (prestige):** resetting earns **Mod Points**, which you spend in **Loop Modifications**, the huge mod tree. Examples: Fast-Loop MK1–MK4 (more Cells, fewer ticks per loop) and Technology Advancement nodes that unlock new generator MKs.
 - **Research Center / Research Catalogue:** unlocks after you get a specific ship (The Koios) each reset. Research Points buy boosts to almost everything: Cells, Mod Points, Shards, Research Points, Academy Points, tick speed, token caps, generators.
 - Also: skill/talent trees, ship evolution, shards, an academy, mini-games and activities, leaderboards, daily rewards.
+- **Ships are CIFI's big progression steps** (per the [Ships page](https://cifi.game-vault.net/wiki/Ships) and [Beginners Guide](https://cifi.game-vault.net/wiki/Guide:Beginners_Guide), checked 2026-10-11): The Cradle, Auxesia, Zagreus, Hephaestus, Demeter, Koios, Zeus, then the Ouroboros. "Each ship unlocks new mechanics, which have their own rank-up requirements and installs." Installs are points you spread for multipliers (first point unlocks the bonus; more points give diminishing returns). Maxing crew plus enough Cells lets you **evolve** a ship for a large multiplier, and "Loop reset doesn't reset ship evolutions." Later ships bring whole systems (Demeter → Shards, Koios → Research, Zeus → Space Academy).
+- Loop resets need a growing number of loop fills, so resetting too often can "brick" you for a while.
 
 **Why it feels like constant progress:** there are many currencies, each with its own upgrade sink, so *something* is always affordable. Mod tree nodes also *unlock* things (new generator tiers), not just add bigger numbers.
 

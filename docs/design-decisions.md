@@ -108,6 +108,37 @@ A running record of decisions made while shaping the game design. Newest at the 
 | Band mixes | **Keep the overlap** | Particles span several bands; single-band ores in IOM feel limiting |
 | T1 / T3 | T1 **50**, T3 **1.2M** (Resonance reference too) | Puts T1 at ~33 min watched |
 | Priority | **Get to a playable build**, tune by playing | |
+| Rares | **No rare-cost upgrades for now**; rares feed the Index only | Think of them like IOM veins. Decide how they're spent later, when it fits the plan |
+| Particle names | **Simple names and symbols, no slashes or punctuation**: J/psi → **Psi (ψ)** (its other real name) | "J/ψ" read like "J or ψ" in cost lists. Applies to future theorized/invented particles too |
+
+## Round 10 — Thresholds and Rings (2026-10-11)
+
+| Topic | Decision | Notes |
+|---|---|---|
+| Thresholds | **Obelisk-style power track**, ~50 long term, frequent, every breach gives lore + a small permanent bonus or an unlock | Not tied to every few bands anymore; milestones permit the next Ring |
+| Thresholds on Recalibrate | **Kept** | Matches IOM (Obelisk progress survives prestige; checked on the IOM wiki) |
+| "Worlds" | **Hybrid: concentric Rings.** Each ring = new bands + particle family + rare type (IOM worlds/veins) and restores a station with a new system (CIFI ships). Opened by building the connection after a milestone Threshold | No IOM-style speed debuffs; a ring may have a twist instead |
+| Particle stages | Known → Theorized → **Fringe** → **Impossible / fantasy** | Outer Ring particles are made up but lean on scientific-sounding names |
+| Research notes | Fixed: IOM prestige does **not** reset the Obelisk | Check the reference game's wiki before relying on how it works |
+| Title | **The Lost Ring** (working title, replaces *Idle Ring*) | Fits the mystery. The name is already used by a 2008 McDonald's/Olympics alternate reality game and a small 2023 itch.io RPG; neither is an idle game. Recheck before any store release. Internal ids (package name, app slug, save key) stay `idle-ring` so saves and links keep working |
+
+### Round 10b — Roadmap review (2026-10-11)
+
+| Topic | Decision | Notes |
+|---|---|---|
+| Bands | **All of a Ring's bands open on arrival**; never a Threshold reward | Speed and Power already gate how high you can farm, like IOM floors |
+| Unlocks | **Every unlock must come with something to spend on** | Nothing that unlocks and then sits unused |
+| Rares | **Rare research chain, like IOM veins**: ~6 rares per Ring (one per 2 bands), start with Positron, unlock each next rare with Rare Research (band particles + previous rare). Kept through Recalibrate | Inner Ring: Positron, Antiproton, Tetraquark, Pentaquark, Glueball, Graviton. Sensitivity only raises chance now |
+| Schematics size | **Ring Schematics grows into a large CIFI-style tree** (like Loop Mods) | Why no separate IOM-style skill tree: one big tree instead of two small ones |
+| Overall timeline | **Outer Ring reachable in ~4–6 months** (engaged player); Second Ring ~4 days, Third ~4 weeks, T60 ~10 months | Not set in stone |
+| Premium currency | **Crystals.** Every Threshold grants some (like IOM's gems per Obelisk) | Briefly called Diamonds; switched to Crystals, which also avoids CIFI's name (its premium currency is Diamonds) |
+| Crystal uses | **Special upgrades shop** (like CIFI's diamond specials), plus **small required costs** (e.g. part of each Ring connection) | Any required Crystal cost must be covered by Crystals earned free by that point |
+| Buying Crystals | **Design for optional purchase later** (packs); nothing sold now | Never required, never needed for 100%, no ads, no temporary boosts or time skips |
+| Bonus-type Threshold rewards | **Tentative** | May be swapped for other rewards later |
+| Recalibrate + Schematics | **Stay at T10** (~1.5 days) | Considered moving them to ~T4 (~3 h); with the whole Inner Ring taking ~4 days, a day-and-a-half first run is fine |
+| Threshold count | **~60** (14 / 14 / 16 / 16 per Ring) | Third and Outer Rings get a couple more, not ~20 |
+| Later Rings | **Thresholds slow down on purpose** (gaps ~3 days → ~2 weeks); side systems carry progress there | Like IOM, where late Obelisk levels slow and Stargazing, Fishing, Pets etc. carry progress. Keeps it fresh |
+| New early systems | **Resonators** (rare sink, statue-like), **Experiments** (request board → Data tree, contract-like), **Trials** (challenge-like restricted runs) | Clearance skill tree not chosen; Schematics is the big tree. Placement in the [Threshold Roadmap](threshold-roadmap.md) v0.2 |
 
 ## Open questions
 - How do the four upgrade styles fit into one coherent structure without overload?

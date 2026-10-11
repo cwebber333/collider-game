@@ -13,9 +13,9 @@ import {
   upgradeCost,
   type Cost,
   type GameState,
-} from '../src/economy';
-import type { ParticleId } from '../src/data/particles';
-import { UPGRADE_IDS, type UpgradeId } from '../src/data/upgrades';
+} from '../economy';
+import type { ParticleId } from '../data/particles';
+import { UPGRADE_IDS, type UpgradeId } from '../data/upgrades';
 
 const BUY_PRIORITY: UpgradeId[] = [
   'ringSpeed',

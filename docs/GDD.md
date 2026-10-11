@@ -1,11 +1,11 @@
-# Idle Ring — Game Design Document v0.4 (draft)
+# The Lost Ring — Game Design Document v0.4 (draft)
 
 > **Status:** rough draft for discussion. Everything here can change.
 > Background: [research notes](research/inspiration-games.md) · [decisions log](design-decisions.md)
 >
 > **v0.4 changes:** the collider stats no longer trade off against each other. **Speed selects a band** (like IOM floors), each band produces its own particles, and particles are the currencies (§3). Thresholds sit between groups of bands (§4).
 
-**Working title:** *Idle Ring*
+**Working title:** *The Lost Ring* (formerly *Idle Ring*)
 
 ---
 
@@ -63,12 +63,33 @@ Rare particle chance    = base rarity(b) × detection bonus
 
 ## 4. Progress clock: Thresholds
 
-The Ring is pushing through layered energy barriers called **Thresholds** (the counterpart to IOM's Obelisk level).
+The Ring is pushing through layered energy barriers called **Thresholds**, the counterpart to IOM's Obelisk levels. Like the Obelisk, they are their **own power track**, not a gate after every few bands.
 
-- **Where they sit:** every few speed bands (e.g. every 5) there's a Threshold. Speed can't go past it until it's breached.
-- **Power check:** to breach it, your Power (and maybe Detection) must reach the required level. This works like IOM's Obelisk.
-- Breaching a Threshold **opens the next set of bands**, unlocks new systems, and reveals a **fragment of lore** (often a previous operator's note) about what's beyond.
-- Thresholds are the main pacing tool. The target is a smooth climb (see §8).
+- **Power check:** Threshold *k* needs Power ≥ its requirement (each roughly 1.6–2.5× the last). Breaching costs nothing and can't fail.
+- **Frequent early, slower later:** minutes apart at first, days apart in the Second Ring, and up to about two weeks apart in the last two Rings, where the side systems carry most of the progress. **~60 planned** (IOM's Obelisk goes past 70).
+- **Every breach gives something:** a lore fragment (usually a previous operator's note), plus either a **small permanent bonus** (e.g. +2% Power) or an **unlock** (a system, an upgrade line, a feature). Every unlock comes with something to spend on. **Bands are never a Threshold reward**: a Ring's bands are all open once you reach it, and Speed and Power decide how high you can farm well (like IOM floors).
+- **Milestone Thresholds permit the next Ring** (§4a), the way IOM's Obelisk levels permit world monuments.
+- The full list of Thresholds and rewards is in the [Threshold Roadmap](threshold-roadmap.md).
+- **Kept through Recalibrate** (IOM keeps Obelisk progress through prestige too). Each run pushes for Thresholds past your old peak.
+- Thresholds are the main pacing tool. The target is a smooth climb (see §9).
+
+## 4a. Rings (the "worlds")
+
+The Ring you start in is the **innermost of several concentric rings**. Each "world" is the next ring outward: a bigger circumference, higher energies, stranger particles. This combines IOM's worlds with CIFI's ships:
+
+- **Like IOM worlds:** each ring brings a new **set of bands** (all open on arrival), a new **particle family**, and its own **rares** (about 6 per ring, unlocked one by one through Rare Research, like IOM's veins). You open a ring by **building the connection** to it, paid in particles plus that ring's rares, once a milestone Threshold permits it.
+- **Like CIFI ships:** each ring also **restores a station** of the facility, which brings a whole new system with its own resource that feeds the others.
+- **No penalties:** IOM slows the game down in later worlds; we don't. Each ring may have a **twist** (a new rule), never a debuff.
+- **Lore:** previous operators' notes can come from the outer rings ("they got further"). How many rings there are stays an open question in-game.
+
+| Ring | Bands | Particles | Rares (veins) | Station / system | Opened at (draft) |
+|---|---|---|---|---|---|
+| **Inner Ring** | 1–12 | **Known**: real particles | Positron, Pentaquark, Graviton | Collider, Particle Index, Wellspring | Start |
+| **Second Ring** | 13–24 | **Theorized**: predicted, never observed (axion, sterile neutrino, magnetic monopole, dark photon…) | TBD | Detector Array | T14 + build |
+| **Third Ring** | 25–36 | **Fringe**: speculative ideas at the edge of physics (tachyon, preon, strangelet, Q-ball…) | TBD | Excavation | T28 + build |
+| **Outer Ring** | 37–48 | **Impossible / fantasy**: completely made up, but with scientific-sounding names | TBD | The Archive | T44 + build |
+
+About 48 bands across 4 rings, with ~60 Thresholds spread over them (see the [Threshold Roadmap](threshold-roadmap.md)). All numbers are drafts.
 
 ## 5. Systems map (candidate list)
 
@@ -111,8 +132,10 @@ Self-contained side modes that rotate, for example one active at a time for abou
 | Layer | Name (placeholder) | Resets | Keeps | Earns |
 |---|---|---|---|---|
 | 1 | **Recalibrate** | Particles, collider upgrades | Index, schematics (Wellspring resets) | *Resonance* → Ring Schematics |
-| 2 | **Rebuild the Ring** | Layer 1 + Thresholds | Index, anomaly rewards | Rarer currency + new schematic branch |
+| 2 | TBD (direction below) | Layer 1 (**not** Thresholds) | Index, Thresholds, anomaly rewards | TBD |
 | 3 | TBD | Nearly everything | Meta-progress | Late-game; may never be built |
+
+**Layer 2 direction (not now):** something like CIFI's **Orbs** system, possibly with a version of CIFI's **Meltdown**. Meltdown takes power away, which breaks "nothing drains", so it would need reworking. Check the CIFI wiki before designing it.
 
 Principle: each reset should be **quick to recover from and clearly stronger**. Research found IOM's early prestiges feel weak, which is something to fix.
 
@@ -139,12 +162,12 @@ Get the core fun before adding breadth. Once it's enjoyable, flesh out one syste
 
 1. **Collider** with Speed (band selection), Power and Detection: **12 bands**, 10 common + 3 rare particles as currencies
 2. **Wellspring** in its simplest form, as the power source (unlocks at T2)
-3. **Thresholds 1–3** (power checks) with lore fragments
+3. **Inner Ring only.** Currently 3 Thresholds (power checks with lore); moving to the frequent Obelisk-style track in §4
 4. **Particle Index**: all 13 MVP particles, each with one buff
-5. **Recalibrate** (layer 1 prestige) + a small Ring Schematics tree (~20–30 nodes)
+5. **Recalibrate** (layer 1 prestige) + the first part of Ring Schematics (~20–30 nodes to start; the tree is meant to grow large, like CIFI's mod tree, with branches added at later Thresholds)
 6. Offline progress + saving
 
-*Not in MVP:* Detector Array as a separate system (detection is a plain upgrade at first), side labs, anomalies, layers 2–3.
+*Not in MVP:* outer Rings, Detector Array as a separate system (detection is a plain upgrade at first), side labs, anomalies, layers 2–3.
 
 ## 12. Lore approach: open-ended mystery
 
@@ -169,6 +192,15 @@ More than flavor text, but **no final answer**. The mystery is structured so it 
 ## 14. Monetization
 
 None planned. **No ads, ever.** If optional purchases are ever added, they follow the "optional multiplier pack" idea: never required, and never needed for 100% completion.
+
+### Crystals (premium currency)
+
+- **Earned in play:** every Threshold breach gives Crystals (more for later Thresholds). Other slow free sources may come later.
+- **Spent on:**
+  - A **special upgrades shop** (like CIFI's diamond specials): permanent upgrades that can't be bought any other way.
+  - **Small required costs**, such as part of each Ring connection. **Rule:** any required Crystal cost must always be covered by Crystals the player is guaranteed to have earned for free by that point.
+- **Never:** temporary boosts or time skips (design rule), and never needed for 100% completion.
+- **Designed so optional purchase is possible later** (Crystal packs), without breaking balance or making buying feel necessary. Nothing is sold now.
 
 ## 15. Open questions
 

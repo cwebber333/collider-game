@@ -11,7 +11,7 @@ export const PARTICLE_IDS = [
   'pion',
   'kaon',
   'tau',
-  'jpsi',
+  'psi',
   'bmeson',
   'zboson',
   'higgs',
@@ -65,7 +65,8 @@ export const PARTICLES: Record<ParticleId, ParticleDef> = {
   pion: { id: 'pion', name: 'Pion', symbol: 'π', mass: '140 MeV', indexBase: 100, buff: { kind: 'beamCurrentCost', perLevel: 0.03 } },
   kaon: { id: 'kaon', name: 'Kaon', symbol: 'K', mass: '494 MeV', indexBase: 100, buff: { kind: 'power', perLevel: 0.05 } },
   tau: { id: 'tau', name: 'Tau', symbol: 'τ', mass: '1.78 GeV', indexBase: 100, buff: { kind: 'rareChance', perLevel: 0.05 } },
-  jpsi: { id: 'jpsi', name: 'J/psi', symbol: 'J/ψ', mass: '3.10 GeV', indexBase: 100, buff: { kind: 'wellspring', perLevel: 0.05 } },
+  // Also known as J/psi; we use its simpler name.
+  psi: { id: 'psi', name: 'Psi', symbol: 'ψ', mass: '3.10 GeV', indexBase: 100, buff: { kind: 'wellspring', perLevel: 0.05 } },
   bmeson: { id: 'bmeson', name: 'B meson', symbol: 'B', mass: '5.28 GeV', indexBase: 100, buff: { kind: 'yield', perLevel: 0.05 } },
   zboson: { id: 'zboson', name: 'Z boson', symbol: 'Z', mass: '91.2 GeV', indexBase: 100, buff: { kind: 'thresholdReq', perLevel: 0.03 } },
   higgs: { id: 'higgs', name: 'Higgs boson', symbol: 'H', mass: '125 GeV', indexBase: 100, buff: { kind: 'resonance', perLevel: 0.05 } },
