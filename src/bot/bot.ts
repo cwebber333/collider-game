@@ -10,10 +10,15 @@ import {
   canAfford,
   canBreach,
   bandCap,
+  canBuySchematic,
+  nextConnection,
+  canRecalibrate,
   chargeRate,
   costEntries,
   dataUpgradeCost,
   requestCost,
+  trialUpgradeCost,
+  resonanceGain,
   productionRates,
   researchCost,
   resonatorCost,
@@ -23,6 +28,8 @@ import {
   type GameState,
 } from '../economy';
 import type { DataUpgradeId } from '../data/experiments';
+import type { SchematicId } from '../data/schematics';
+import { TRIAL_UPGRADE_IDS } from '../data/trials';
 import type { ParticleId } from '../data/particles';
 import type { Resource } from '../data/resources';
 import { RESONATORS } from '../data/resonators';
@@ -30,8 +37,8 @@ import { UPGRADE_IDS, type UpgradeId } from '../data/upgrades';
 
 /** A Resonator, written as "resonator:<rare>" (a template literal type: a string with a fixed shape). */
 export type ResonatorTarget = `resonator:${ParticleId}`;
-/** Something the bot can spend on: an upgrade, the next Rare Research, or a Resonator. */
-export type Target = UpgradeId | 'research' | ResonatorTarget;
+/** Something the bot can spend on: an upgrade, the next Rare Research, a Resonator, or the Ring connection. */
+export type Target = UpgradeId | 'research' | 'connection' | ResonatorTarget;
 
 const resonator = (rare: ParticleId): ResonatorTarget => `resonator:${rare}`;
 const RESONATOR_TARGETS = RESONATORS.map((r) => resonator(r.rare));
@@ -43,11 +50,13 @@ const PRODUCTION_RESONATORS = RESONATORS.filter((r) => ['yield', 'power', 'wells
 const ALL_TARGETS: readonly Target[] = [...UPGRADE_IDS, 'research', ...RESONATOR_TARGETS];
 
 const BUY_PRIORITY: Target[] = [
+  'connection',
   'ringSpeed',
   'beamCurrent',
   'conduits',
   'taps',
   'coils',
+  'capacitors',
   ...PRODUCTION_RESONATORS,
   'collectorGrid',
   'research',
@@ -67,12 +76,14 @@ export interface Plan {
 
 function targetCost(state: GameState, target: Target): Cost | null {
   if (target === 'research') return researchCost(state);
+  if (target === 'connection') return nextConnection(state)?.cost ?? null;
   const rare = resonatorRare(target);
   return rare ? resonatorCost(state, rare) : upgradeCost(state, target as UpgradeId);
 }
 
 function buyTarget(state: GameState, target: Target): GameState {
   if (target === 'research') return apply(state, { type: 'research' });
+  if (target === 'connection') return apply(state, { type: 'buildConnection' });
   const rare = resonatorRare(target);
   if (rare) return apply(state, { type: 'buildResonator', rare });
   return apply(state, { type: 'buy', upgrade: target as UpgradeId });
@@ -82,7 +93,7 @@ function buyTarget(state: GameState, target: Target): GameState {
 function withOneMore(state: GameState, target: Target): GameState {
   const rare = resonatorRare(target);
   if (rare) return { ...state, resonators: { ...state.resonators, [rare]: resonatorLevel(state, rare) + 1 } };
-  if (target === 'research') return state;
+  if (target === 'research' || target === 'connection') return state;
   const id = target as UpgradeId;
   return { ...state, levels: { ...state.levels, [id]: state.levels[id] + 1 } };
 }
@@ -107,7 +118,7 @@ export function timeToAfford(state: GameState, cost: Cost, band: number): number
 }
 
 const POWER_UPGRADES: UpgradeId[] = ['beamCurrent', 'conduits'];
-const PRODUCTION_TARGETS: Target[] = ['beamCurrent', 'conduits', 'coils', 'collectorGrid', ...PRODUCTION_RESONATORS];
+const PRODUCTION_TARGETS: Target[] = ['beamCurrent', 'conduits', 'coils', 'capacitors', 'collectorGrid', ...PRODUCTION_RESONATORS];
 /**
  * How many "next Ring Speed levels" a production upgrade is expected to keep
  * paying off for. Production upgrades are permanent for the run, so this is generous.
@@ -137,9 +148,9 @@ export function bestPlan(state: GameState, candidates: readonly Target[] = ALL_T
   return best;
 }
 
-/** Ring Speed until it's maxed, then Power. */
+/** The Ring connection once it's allowed, else Ring Speed until it's maxed, then Power. */
 export function mainPlan(state: GameState): Plan | null {
-  return bestPlan(state, ['ringSpeed']) ?? bestPlan(state, POWER_UPGRADES);
+  return bestPlan(state, ['connection']) ?? bestPlan(state, ['ringSpeed']) ?? bestPlan(state, POWER_UPGRADES);
 }
 
 /**
@@ -196,7 +207,36 @@ function doExperiments(state: GameState, goal: Plan | null): GameState {
     const cost = dataUpgradeCost(state, id);
     if (cost !== null && state.experiments.data >= cost) return apply(state, { type: 'buyDataUpgrade', upgrade: id });
   }
+  for (const id of TRIAL_UPGRADE_IDS) {
+    const cost = trialUpgradeCost(state, id);
+    if (cost !== null && state.trials.marks >= cost) return apply(state, { type: 'buyTrialUpgrade', upgrade: id });
+  }
   return state;
+}
+
+/** Schematics in the order the bot builds them (it skips ones it can't build yet). */
+const SCHEMATIC_PRIORITY: SchematicId[] = [
+  'primedConduits', 'autoBreach', 'spunUp', 'steadySensitivity', 'primedBeam', 'extraBench',
+  'autoResearch', 'neighbourSignals', 'autoBuy', 'deepStart', 'overdrive', 'annotatedIndex',
+];
+/** Don't Recalibrate within this many seconds of the last one. */
+const MIN_RUN_SECONDS = 30 * 60;
+/** Recalibrate once the gain is at least this much, and at least doubles what was earned so far. */
+const MIN_RESONANCE_GAIN = 5;
+
+/** A common prestige rule of thumb: reset once it would at least double your Resonance. */
+export function shouldRecalibrate(state: GameState): boolean {
+  if (!canRecalibrate(state) || state.elapsed - state.runStartedAt < MIN_RUN_SECONDS) return false;
+  if (nextConnection(state)) return false; // finish the connection first (its particles would reset)
+  const gain = resonanceGain(state);
+  return gain >= MIN_RESONANCE_GAIN && gain >= state.resonanceEarned;
+}
+
+/** Builds every Schematic it can afford, in priority order. */
+function buySchematics(state: GameState): GameState {
+  let s = state;
+  for (const id of SCHEMATIC_PRIORITY) if (canBuySchematic(s, id)) s = apply(s, { type: 'buySchematic', schematic: id });
+  return s;
 }
 
 export interface CheckInOptions {
@@ -209,6 +249,8 @@ export interface CheckInOptions {
 // with defaults, like keyword arguments in Python.
 export function checkIn(state: GameState, { awaySeconds = 0, onBuy }: CheckInOptions = {}): GameState {
   let s = state;
+  if (shouldRecalibrate(s)) s = apply(s, { type: 'recalibrate' });
+  s = buySchematics(s);
   let changed = true;
   while (changed) {
     changed = false;

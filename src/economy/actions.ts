@@ -29,12 +29,18 @@ import {
   type ExperimentRequest,
 } from './experiments';
 import { hasFeature } from './progress';
+import { TRIALS, type TrialDef, type TrialUpgradeId } from '../data/trials';
+import { RING_CONNECTIONS, type RingConnectionDef } from '../data/rings';
+import { trialBonus, trialCostMult, trialLevel, trialUpgradeCost } from './trialUpgrades';
+import { balance } from './resources';
+import { canBuySchematic, extraBoardSlots, hasAutomation, headStartLevels, keptUpgrades } from './schematics';
+import { SCHEMATICS, type SchematicId } from '../data/schematics';
 import { nextRandom } from './random';
 import { canAfford, spend, type Cost } from './resources';
 import { resonatorDef, resonatorLevel } from './resonators';
 import { newGame, type GameState } from './state';
 import { buffReduction } from './particleIndex';
-import { bandCap, chargeRate, power, productionRates } from './stats';
+import { bandCap, chargeRate, power, productionRates, stableBand } from './stats';
 import { resolve } from './statLayer';
 
 /**
@@ -51,8 +57,18 @@ export type Action =
   | { type: 'completeExperiment'; index: number }
   | { type: 'skipExperiment'; index: number }
   | { type: 'buyDataUpgrade'; upgrade: DataUpgradeId }
+  | { type: 'buySchematic'; schematic: SchematicId }
+  | { type: 'buyTrialUpgrade'; upgrade: TrialUpgradeId }
+  | { type: 'buildConnection' }
+  | { type: 'setAutoBuy'; on: boolean }
   | { type: 'recalibrate' };
 
+
+/** Records Power highs (this run and all-time). Called after purchases and every tick. */
+export function withPeak(next: GameState): GameState {
+  const p = power(next);
+  return { ...next, peakPower: Math.max(next.peakPower, p), bestPower: Math.max(next.bestPower ?? 0, p) };
+}
 
 // ---------- Upgrades ----------
 
@@ -75,8 +91,8 @@ export function upgradeCost(state: GameState, id: UpgradeId): Cost | null {
   // Last tier whose fromLevel we've reached.
   const tier = tiers.filter((t) => t.fromLevel <= level).at(-1)!;
   let discount = 1;
-  if (id === 'ringSpeed') discount = buffReduction(state, 'ringSpeedCost');
-  if (id === 'beamCurrent') discount = buffReduction(state, 'beamCurrentCost');
+  if (id === 'ringSpeed') discount = buffReduction(state, 'ringSpeedCost') * trialCostMult(state);
+  if (id === 'beamCurrent') discount = buffReduction(state, 'beamCurrentCost') * trialCostMult(state);
 
   const cost: Cost = {};
   for (const { particle, base } of tier.costs) {
@@ -97,8 +113,7 @@ function buy(state: GameState, id: UpgradeId): GameState {
   const paid = spend(state, cost);
   // `{ ...x }` copies a dict (shallow), like dict(x) in Python.
   const next: GameState = { ...paid, levels: { ...paid.levels, [id]: paid.levels[id] + 1 } };
-  next.peakPower = Math.max(next.peakPower, power(next));
-  return next;
+  return withPeak(next);
 }
 
 // ---------- Rare Research ----------
@@ -152,8 +167,7 @@ function buildResonator(state: GameState, rare: ParticleId): GameState {
   if (!cost || !canAfford(state, cost)) return state;
   const paid = spend(state, cost);
   const next: GameState = { ...paid, resonators: { ...paid.resonators, [rare]: resonatorLevel(state, rare) + 1 } };
-  next.peakPower = Math.max(next.peakPower, power(next));
-  return next;
+  return withPeak(next);
 }
 
 // ---------- Experiments ----------
@@ -208,7 +222,7 @@ function addRequest(state: GameState): GameState {
 export function fillBoard(state: GameState): GameState {
   if (!hasFeature(state, 'experiments')) return state;
   let s = state;
-  while (s.experiments.requests.length < BOARD_SIZE) {
+  while (s.experiments.requests.length < BOARD_SIZE + extraBoardSlots(s)) {
     const next = addRequest(s);
     if (next === s) break;
     s = next;
@@ -251,7 +265,7 @@ function skipExperiment(state: GameState, index: number): GameState {
   const experiments = {
     ...state.experiments,
     requests: state.experiments.requests.filter((_, i) => i !== index),
-    nextSkipAt: state.elapsed + SKIP_COOLDOWN_SECONDS,
+    nextSkipAt: state.elapsed + Math.max(60, SKIP_COOLDOWN_SECONDS - trialBonus(state, 'skipCooldown')),
   };
   return fillBoard({ ...state, experiments });
 }
@@ -265,8 +279,7 @@ function buyDataUpgrade(state: GameState, id: DataUpgradeId): GameState {
     levels: { ...state.experiments.levels, [id]: dataLevel(state, id) + 1 },
   };
   const next: GameState = { ...state, experiments };
-  next.peakPower = Math.max(next.peakPower, power(next));
-  return next;
+  return withPeak(next);
 }
 
 // ---------- Thresholds ----------
@@ -315,21 +328,138 @@ function recalibrate(state: GameState): GameState {
   const fresh = newGame();
   const particles = { ...fresh.particles };
   for (const id of PARTICLE_IDS) if (PARTICLES[id].rare) particles[id] = state.particles[id];
+  // Schematics: head starts, and levels that are kept.
+  const levels = { ...fresh.levels, ...headStartLevels(state) };
+  for (const id of keptUpgrades(state)) levels[id] = Math.max(levels[id], state.levels[id]);
+  const gain = resonanceGain(state);
   const next: GameState = {
     ...fresh,
     particles,
+    levels,
+    schematics: state.schematics,
+    trials: state.trials,
+    ringsConnected: state.ringsConnected,
+    autoBuy: state.autoBuy,
+    bestPower: state.bestPower,
+    resonanceEarned: state.resonanceEarned + gain,
+    runStartedAt: state.elapsed,
     rares: state.rares,
     resonators: state.resonators,
     experiments: newExperiments(state.experiments.seed),
     lifetime: state.lifetime,
     breached: state.breached,
     crystals: state.crystals,
-    resonance: state.resonance + resonanceGain(state),
+    resonance: state.resonance + gain,
     recalibrations: state.recalibrations + 1,
     elapsed: state.elapsed,
   };
   next.peakPower = power(next);
   return fillBoard(next);
+}
+
+// ---------- Ring Schematics ----------
+
+function buySchematic(state: GameState, id: SchematicId): GameState {
+  if (!canBuySchematic(state, id)) return state;
+  return withPeak({
+    ...state,
+    resonance: state.resonance - SCHEMATICS[id].cost,
+    schematics: [...state.schematics, id],
+  });
+}
+
+// ---------- Trials ----------
+
+/** Is a Trial's condition met right now (in the current run)? */
+export function trialMet(state: GameState, def: TrialDef): boolean {
+  const c = def.condition;
+  const runTime = state.elapsed - state.runStartedAt;
+  switch (c.kind) {
+    case 'powerWithCap':
+      return state.levels[c.upgrade] <= c.maxLevel && power(state) >= c.power;
+    case 'bandWithCap':
+      return state.levels[c.upgrade] <= c.maxLevel && stableBand(state) >= c.band;
+    case 'powerWithin':
+      return runTime <= c.seconds && power(state) >= c.power;
+    case 'bandWithin':
+      return runTime <= c.seconds && stableBand(state) >= c.band;
+    case 'hold':
+      return balance(state, c.resource) >= c.amount;
+    case 'experiments':
+      return state.experiments.completed >= c.count;
+  }
+}
+
+/** Completes any Trials whose conditions are met (once Trials are unlocked). */
+export function checkTrials(state: GameState): GameState {
+  if (!hasFeature(state, 'trials')) return state;
+  const done = TRIALS.filter((t) => !state.trials.completed.includes(t.id) && trialMet(state, t));
+  if (done.length === 0) return state;
+  return {
+    ...state,
+    trials: {
+      ...state.trials,
+      completed: [...state.trials.completed, ...done.map((t) => t.id)],
+      marks: state.trials.marks + done.reduce((sum, t) => sum + t.marks, 0),
+    },
+  };
+}
+
+function buyTrialUpgrade(state: GameState, id: TrialUpgradeId): GameState {
+  const cost = trialUpgradeCost(state, id);
+  if (!hasFeature(state, 'trials') || cost === null || state.trials.marks < cost) return state;
+  return withPeak({
+    ...state,
+    trials: {
+      ...state.trials,
+      marks: state.trials.marks - cost,
+      levels: { ...state.trials.levels, [id]: trialLevel(state, id) + 1 },
+    },
+  });
+}
+
+// ---------- Ring connections ----------
+
+/** The next Ring connection, if its milestone has been reached and it isn't built. */
+export function nextConnection(state: GameState): RingConnectionDef | undefined {
+  const def = RING_CONNECTIONS[state.ringsConnected ?? 0];
+  return def && hasFeature(state, def.unlockedBy) ? def : undefined;
+}
+
+export function canBuildConnection(state: GameState): boolean {
+  const def = nextConnection(state);
+  return def !== undefined && canAfford(state, def.cost) && state.crystals >= def.crystals;
+}
+
+function buildConnection(state: GameState): GameState {
+  const def = nextConnection(state);
+  if (!def || !canBuildConnection(state)) return state;
+  const paid = spend(state, def.cost);
+  return { ...paid, crystals: paid.crystals - def.crystals, ringsConnected: (state.ringsConnected ?? 0) + 1 };
+}
+
+// ---------- Automation (from Ring Schematics) ----------
+
+/** Collider upgrades Auto-Buy tries, in order. */
+const AUTO_BUY_ORDER: UpgradeId[] = ['beamCurrent', 'collectorGrid', 'ringSpeed', 'sensitivity'];
+/** Safety cap on purchases per automation pass. */
+const MAX_AUTO_STEPS = 200;
+
+/** Runs owned automations: breach, research, and (if switched on) Auto-Buy. */
+export function runAutomation(state: GameState): GameState {
+  let s = state;
+  for (let i = 0; i < MAX_AUTO_STEPS; i++) {
+    let next = s;
+    if (hasAutomation(s, 'breach') && canBreach(s)) next = breach(s);
+    else if (hasAutomation(s, 'research') && canResearch(s)) next = research(s);
+    else if (hasAutomation(s, 'buy') && s.autoBuy) {
+      const id = AUTO_BUY_ORDER.find((u) => canBuy(s, u));
+      if (id) next = buy(s, id);
+    }
+    if (next === s) break;
+    s = next;
+  }
+  return s;
 }
 
 // ---------- Dispatcher ----------
@@ -354,6 +484,14 @@ export function apply(state: GameState, action: Action): GameState {
       return skipExperiment(state, action.index);
     case 'buyDataUpgrade':
       return buyDataUpgrade(state, action.upgrade);
+    case 'buySchematic':
+      return buySchematic(state, action.schematic);
+    case 'buyTrialUpgrade':
+      return buyTrialUpgrade(state, action.upgrade);
+    case 'buildConnection':
+      return buildConnection(state);
+    case 'setAutoBuy':
+      return state.autoBuy === action.on ? state : { ...state, autoBuy: action.on };
     case 'recalibrate':
       return recalibrate(state);
   }

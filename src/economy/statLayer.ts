@@ -5,7 +5,7 @@
 //
 // So bonuses from the SAME system add up, and DIFFERENT systems multiply.
 // "mult" contributions are the labelled exceptions (e.g. Beam Current compounds).
-import { BASE_CHARGE_RATE, BASE_POWER, BASE_YIELD } from '../data/constants';
+import { BASE_CHARGE_RATE, BASE_POWER, BASE_YIELD, POWER_PER_RESONANCE } from '../data/constants';
 import { DATA_UPGRADE_IDS, DATA_UPGRADES, type DataUpgradeEffect } from '../data/experiments';
 import { PARTICLE_IDS, PARTICLES, type BuffKind } from '../data/particles';
 import { RESONATORS, type ResonatorEffect } from '../data/resonators';
@@ -14,12 +14,24 @@ import { UPGRADES } from '../data/upgrades';
 import { dataLevel } from './experiments';
 import { indexBuffsActive, indexLevel } from './particleIndex';
 import { resonatorLevel } from './resonators';
+import { schematicMultiplier } from './schematics';
+import { trialBonus, trialLevel } from './trialUpgrades';
 import type { GameState } from './state';
 
 export const STAT_IDS = ['power', 'yield', 'chargeRate', 'conduitStrength', 'rareChance', 'resonance'] as const;
 export type StatId = (typeof STAT_IDS)[number];
 
-export const SYSTEM_IDS = ['collider', 'wellspring', 'index', 'thresholds', 'resonators', 'experiments'] as const;
+export const SYSTEM_IDS = [
+  'collider',
+  'wellspring',
+  'index',
+  'thresholds',
+  'resonators',
+  'experiments',
+  'recalibrate',
+  'trials',
+  'schematics',
+] as const;
 export type SystemId = (typeof SYSTEM_IDS)[number];
 
 export const STAT_NAMES: Record<StatId, string> = {
@@ -38,6 +50,9 @@ export const SYSTEM_NAMES: Record<SystemId, string> = {
   thresholds: 'Thresholds',
   resonators: 'Resonators',
   experiments: 'Experiments',
+  recalibrate: 'Recalibrate',
+  trials: 'Trials',
+  schematics: 'Ring Schematics',
 };
 
 export interface Contribution {
@@ -87,6 +102,11 @@ const DATA_EFFECT_FOR: Partial<Record<StatId, DataUpgradeEffect>> = {
   conduitStrength: 'conduitStrength',
 };
 
+/** Power per ×10 of Charge held, from Capacitors. */
+export function capacitorPerOrder(state: GameState): number {
+  return UPGRADES.capacitors.perLevel * (state.levels.capacitors ?? 0);
+}
+
 /** Every contribution to a stat, from every system. Zero-value ones are left out. */
 export function contributions(state: GameState, stat: StatId): Contribution[] {
   const list: Contribution[] = [];
@@ -104,15 +124,20 @@ export function contributions(state: GameState, stat: StatId): Contribution[] {
   if (stat === 'power') push('wellspring', `Conduits Lv ${levels.conduits}`, 'flat', resolve(state, 'conduitStrength') * levels.conduits);
   if (stat === 'chargeRate') push('wellspring', `Taps Lv ${levels.taps}`, 'mult', UPGRADES.taps.perLevel ** levels.taps);
   if (stat === 'conduitStrength') push('wellspring', `Coils Lv ${levels.coils}`, 'add', UPGRADES.coils.perLevel * levels.coils);
+  if (stat === 'power') {
+    const orders = Math.log10(1 + (state.charge ?? 0)); // factors of 10 of Charge held
+    push('wellspring', `Capacitors Lv ${levels.capacitors} (Charge held)`, 'add', capacitorPerOrder(state) * orders);
+  }
 
   // Particle Index
   const buff = INDEX_BUFF_FOR[stat];
   if (buff && indexBuffsActive(state)) {
+    const boost = schematicMultiplier(state, 'indexBuffs'); // Annotated Index
     for (const id of PARTICLE_IDS) {
       const p = PARTICLES[id];
       if (p.buff.kind === buff) {
         const level = indexLevel(state, id);
-        push('index', `${p.name} Lv ${level}`, 'add', p.buff.perLevel * level);
+        push('index', `${p.name} Lv ${level}`, 'add', p.buff.perLevel * level * boost);
       }
     }
   }
@@ -146,6 +171,17 @@ export function contributions(state: GameState, stat: StatId): Contribution[] {
       }
     }
   }
+  // Recalibrate: every Resonance ever earned adds Power, so each run starts stronger
+  if (stat === 'power') {
+    push('recalibrate', `${state.resonanceEarned ?? 0} Resonance earned`, 'add', POWER_PER_RESONANCE * (state.resonanceEarned ?? 0));
+  }
+
+  // Trials
+  if (stat === 'power') push('trials', `Endurance Lv ${trialLevel(state, 'endurance')}`, 'add', trialBonus(state, 'power'));
+  if (stat === 'rareChance') push('trials', `Keen Eye Lv ${trialLevel(state, 'keenEye')}`, 'add', trialBonus(state, 'rareChance'));
+
+  // Ring Schematics: a few big one-off multipliers
+  if (stat === 'power') push('schematics', 'Overdrive Core', 'mult', schematicMultiplier(state, 'power'));
   return list;
 }
 

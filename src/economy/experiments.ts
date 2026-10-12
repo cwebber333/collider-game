@@ -4,12 +4,15 @@ import {
   DATA_UPGRADES,
   DATA_UPGRADE_IDS,
   DATA_PER_PARTICLE,
+  TIER2_DATA_MULT,
+  TIER2_MAX_LEVEL_MULT,
   type DataUpgradeEffect,
   type DataUpgradeId,
 } from '../data/experiments';
 import type { ParticleId } from '../data/particles';
 import type { Resource } from '../data/resources';
 import { costEntries, type Cost } from './resources';
+import { hasFeature } from './progress';
 import type { GameState } from './state';
 
 export interface ExperimentRequest {
@@ -66,13 +69,20 @@ export function requestCost(state: GameState, request: ExperimentRequest): Cost 
 /** Data a request pays when completed. */
 export function requestData(state: GameState, request: ExperimentRequest): number {
   const kinds = Object.keys(request.base).length;
-  return Math.floor(DATA_PER_PARTICLE * kinds * (1 + dataBonus(state, 'dataGain')));
+  const tier = hasFeature(state, 'experimentsTier2') ? TIER2_DATA_MULT : 1;
+  return Math.floor(DATA_PER_PARTICLE * kinds * (1 + dataBonus(state, 'dataGain')) * tier);
+}
+
+/** A Data upgrade's max level (raised by Experiments tier 2). */
+export function dataMaxLevel(state: GameState, id: DataUpgradeId): number {
+  const mult = hasFeature(state, 'experimentsTier2') ? TIER2_MAX_LEVEL_MULT : 1;
+  return DATA_UPGRADES[id].maxLevel * mult;
 }
 
 /** Data cost of the next level, or null if maxed. */
 export function dataUpgradeCost(state: GameState, id: DataUpgradeId): number | null {
   const def = DATA_UPGRADES[id];
   const level = dataLevel(state, id);
-  if (level >= def.maxLevel) return null;
+  if (level >= dataMaxLevel(state, id)) return null;
   return Math.ceil(def.cost.base * def.cost.growth ** level);
 }

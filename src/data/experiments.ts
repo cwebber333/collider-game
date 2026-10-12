@@ -18,6 +18,9 @@ export const SKIP_COOLDOWN_SECONDS = 10 * 60;
 export const CHARGE_REQUEST_CHANCE = 0.3;
 /** Chance a request also pays a rare you've researched (about 10 minutes' worth). */
 export const RARE_REWARD_CHANCE = 0.25;
+/** Experiments tier 2 (a later Threshold): Data upgrade max levels ×this, and Data per experiment ×TIER2_DATA_MULT. */
+export const TIER2_MAX_LEVEL_MULT = 2;
+export const TIER2_DATA_MULT = 1.5;
 
 export const DATA_UPGRADE_IDS = ['grants', 'protocols', 'assays', 'chargeStudies', 'conduitStudies', 'diagnostics'] as const;
 export type DataUpgradeId = (typeof DATA_UPGRADE_IDS)[number];

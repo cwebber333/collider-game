@@ -6,6 +6,7 @@ import {
   canCompleteExperiment,
   canSkipExperiment,
   dataLevel,
+  dataMaxLevel,
   dataUpgradeCost,
   hasFeature,
   requestCost,
@@ -32,7 +33,7 @@ function DataUpgradeRow({ state, dispatch, freeBuys, id }: Props & { id: DataUpg
         <Text style={styles.name}>
           {def.name}{' '}
           <Text style={styles.level}>
-            Lv {dataLevel(state, id)}/{def.maxLevel}
+            Lv {dataLevel(state, id)}/{dataMaxLevel(state, id)}
           </Text>
         </Text>
         <Text style={styles.description}>{def.description}</Text>

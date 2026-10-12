@@ -4,7 +4,10 @@ import { BOARD_SIZE, DATA_UPGRADES } from '../data/experiments';
 import { PARTICLES, type ParticleId } from '../data/particles';
 import { RARE_CHAIN } from '../data/rares';
 import { RESONATORS } from '../data/resonators';
-import { OFFLINE_CAP_SECONDS } from '../data/constants';
+import { SCHEMATICS } from '../data/schematics';
+import { TRIAL_UPGRADES, TRIALS } from '../data/trials';
+import { RING_CONNECTIONS } from '../data/rings';
+import { OFFLINE_CAP_SECONDS, POWER_PER_RESONANCE } from '../data/constants';
 import { THRESHOLDS } from '../data/thresholds';
 import { UPGRADE_IDS, UPGRADES } from '../data/upgrades';
 import {
@@ -16,6 +19,12 @@ import {
   basePower,
   breakdown,
   canBreach,
+  canBuildConnection,
+  canBuySchematic,
+  dataMaxLevel,
+  extraBoardSlots,
+  trialMet,
+  rareChances,
   conduitStrength,
   fillBoard,
   newExperiments,
@@ -417,6 +426,129 @@ describe('cross-links', () => {
     const done = apply(withRequest, { type: 'completeExperiment', index: 0 });
     expect(done.particles.positron).toBe(4);
     expect(done.lifetime.positron).toBe(4);
+  });
+});
+
+describe('Ring Schematics', () => {
+  const at = () => thresholdFor('recalibrate')!;
+  const withResonance = (resonance: number, overrides: Partial<GameState> = {}) =>
+    game({ breached: at(), resonance, resonanceEarned: resonance, ...overrides });
+
+  it('cost Resonance, need their prerequisite and an open branch', () => {
+    const s = withResonance(100);
+    expect(canBuySchematic(s, 'primedBeam')).toBe(false); // needs Primed Conduits
+    const bought = apply(s, { type: 'buySchematic', schematic: 'primedConduits' });
+    expect(bought.resonance).toBe(100 - SCHEMATICS.primedConduits.cost);
+    expect(canBuySchematic(bought, 'primedBeam')).toBe(true);
+    expect(canBuySchematic(s, 'spunUp')).toBe(false); // Spiral opens at a later Threshold
+    expect(canBuySchematic(withResonance(100, { breached: thresholdFor('schematicsSpiral')! }), 'spunUp')).toBe(true);
+  });
+
+  it('give head starts and keep levels through Recalibrate', () => {
+    const s = withLevels({ sensitivity: 7, beamCurrent: 50 }, { breached: at(), schematics: ['primedConduits', 'steadySensitivity'] });
+    const after = apply(s, { type: 'recalibrate' });
+    expect(after.levels.conduits).toBe(10); // Primed Conduits
+    expect(after.levels.sensitivity).toBe(7); // Steady Sensitivity keeps it
+    expect(after.levels.beamCurrent).toBe(0);
+  });
+
+  it('automate breaching as time passes', () => {
+    const levelsForT1 = Math.ceil(Math.log(THRESHOLDS[0].power) / Math.log(UPGRADES.beamCurrent.perLevel));
+    const s = withLevels({ beamCurrent: levelsForT1 }, { schematics: ['autoBreach'] });
+    expect(advance(s, 1).breached).toBeGreaterThanOrEqual(1);
+    expect(advance({ ...s, schematics: [] }, 1).breached).toBe(0);
+  });
+
+  it('Neighbour Signals let a band catch the rare from the band next to it', () => {
+    const s = game({ rares: ['positron', 'antiproton'] });
+    expect(rareChances(s, 2).antiproton).toBeUndefined();
+    const withNode = { ...s, schematics: ['neighbourSignals' as const] };
+    expect(rareChances(withNode, 2).antiproton).toBeCloseTo(rareChance(withNode, 3) * 0.5);
+  });
+
+  it('Extra Bench adds an Experiment slot; Overdrive Core doubles Power', () => {
+    expect(extraBoardSlots(game({ schematics: ['extraBench'] }))).toBe(1);
+    expect(power(game({ schematics: ['overdrive'] }))).toBeCloseTo(2);
+  });
+
+  it('every Resonance earned adds Power, and spending it does not take that away', () => {
+    expect(power(game({ resonanceEarned: 50, resonance: 0 }))).toBeCloseTo(1 + POWER_PER_RESONANCE * 50);
+  });
+});
+
+describe('Capacitors', () => {
+  it('turn stored Charge into Power: +2% per level for each factor of 10 held', () => {
+    const s = withLevels({ capacitors: 2 }, { breached: thresholdFor('capacitors')!, charge: 999 }); // log10(1000) = 3
+    const empty = { ...s, charge: 0 };
+    expect(power(s) / power(empty)).toBeCloseTo(1 + 0.02 * 2 * 3);
+  });
+});
+
+describe('Experiments tier 2', () => {
+  it('doubles Data upgrade caps and pays more Data', () => {
+    const before = game({ breached: thresholdFor('experimentsTier2')! - 1 });
+    const after = game({ breached: thresholdFor('experimentsTier2')! });
+    expect(dataMaxLevel(after, 'grants')).toBe(2 * dataMaxLevel(before, 'grants'));
+    const request = { base: { photon: 10 } };
+    expect(requestData(after, request)).toBeGreaterThan(requestData(before, request));
+  });
+});
+
+describe('Trials', () => {
+  const at = () => thresholdFor('trials')!;
+
+  it('complete on their own during play and pay Marks', () => {
+    const s = game({ breached: at(), particles: { ...newGame().particles, antiproton: 250 } });
+    const after = advance(s, 1);
+    expect(after.trials.completed).toContain('antimatterHoard');
+    expect(after.trials.marks).toBe(TRIALS.find((t) => t.id === 'antimatterHoard')!.marks);
+    // Only once.
+    expect(advance(after, 1).trials.marks).toBe(after.trials.marks);
+  });
+
+  it('do nothing before their Threshold', () => {
+    const s = game({ breached: at() - 1, particles: { ...newGame().particles, antiproton: 250 } });
+    expect(advance(s, 1).trials.completed).toEqual([]);
+  });
+
+  it('check conditions against the current run', () => {
+    const def = TRIALS.find((t) => t.id === 'quickStart')!;
+    const fast = withLevels({ beamCurrent: 40 }, { elapsed: 100, runStartedAt: 0 });
+    expect(trialMet(fast, def)).toBe(true);
+    expect(trialMet({ ...fast, elapsed: 5_000 }, def)).toBe(false); // too long into the run
+  });
+
+  it('Marks buy permanent upgrades that survive Recalibrate', () => {
+    const s = game({ breached: thresholdFor('recalibrate')!, trials: { completed: [], marks: 100, levels: {} } });
+    const bought = apply(s, { type: 'buyTrialUpgrade', upgrade: 'endurance' });
+    expect(power(bought) / power(s)).toBeCloseTo(1 + TRIAL_UPGRADES.endurance.perLevel);
+    expect(apply(bought, { type: 'recalibrate' }).trials.levels.endurance).toBe(1);
+  });
+});
+
+describe('Ring connection', () => {
+  const def = RING_CONNECTIONS[0];
+  const rich = (overrides: Partial<GameState> = {}) =>
+    game({
+      breached: THRESHOLDS.length,
+      crystals: def.crystals,
+      particles: Object.fromEntries(Object.keys(newGame().particles).map((k) => [k, 1e12])) as GameState['particles'],
+      ...overrides,
+    });
+
+  it('needs its milestone Threshold, the particles and rares, and Crystals', () => {
+    expect(canBuildConnection(rich())).toBe(true);
+    expect(canBuildConnection(rich({ breached: THRESHOLDS.length - 1 }))).toBe(false);
+    expect(canBuildConnection(rich({ crystals: def.crystals - 1 }))).toBe(false);
+  });
+
+  it('is built once, spends its cost, and survives Recalibrate', () => {
+    const built = apply(rich(), { type: 'buildConnection' });
+    expect(built.ringsConnected).toBe(1);
+    expect(built.crystals).toBe(0);
+    expect(built.particles.higgs).toBe(1e12 - def.cost.higgs!);
+    expect(apply(built, { type: 'buildConnection' })).toBe(built);
+    expect(apply(built, { type: 'recalibrate' }).ringsConnected).toBe(1);
   });
 });
 

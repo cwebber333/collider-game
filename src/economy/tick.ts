@@ -2,7 +2,7 @@
 // catch-up use the same function, so they always produce the same result.
 import { MAX_TICK_SECONDS } from '../data/constants';
 import { PARTICLE_IDS } from '../data/particles';
-import { fillBoard } from './actions';
+import { checkTrials, fillBoard, runAutomation, withPeak } from './actions';
 import { offlineCap } from './progress';
 import type { GameState } from './state';
 import { chargeRate, productionRates } from './stats';
@@ -14,7 +14,8 @@ export function advance(state: GameState, seconds: number): GameState {
   // Step in chunks so Index levels earned along the way start helping.
   while (remaining > 0) {
     const dt = Math.min(remaining, MAX_TICK_SECONDS);
-    current = step(current, dt);
+    // Power also rises without purchases (e.g. Index levels), so record peaks every step.
+    current = checkTrials(withPeak(runAutomation(step(current, dt))));
     remaining -= dt;
   }
   // Saves from before Experiments existed may need their board filled.

@@ -63,7 +63,7 @@ The drift from real to theorized happens inside the rares too.
 | **Rare Research** | IOM's Vein Research | Band particles + the previous rare | The next rare type |
 | **Resonators** | IOM's Statues: permanent upgrade lines | Rares (+ some particles) | Each line buffs a different system: Power, Yield, Wellspring, Index growth, Experiments, offline cap… |
 | **Experiments** | IOM's Contracts: a board of requests | A chosen set of particles per request (a trade, never a drain; requests don't expire) | **Data**, a token currency for the Experiments upgrade tree, which boosts several systems |
-| **Trials** | IOM's Challenges | Nothing: a separate run with a restriction (e.g. no Collector Grid, Speed capped). Your main run waits safely; quitting a Trial loses nothing | A permanent reward per Trial completed |
+| **Trials** | IOM's Challenges | Nothing: goals with a twist (e.g. reach 10K Power with no Collector Grid) that complete on their own during normal play | **Marks** for permanent Trial upgrades |
 
 ## The game's parts at a glance
 
@@ -175,10 +175,9 @@ Connecting opens bands 37–48, the Outer Ring's first rare, and **The Archive**
 
 ## Notes and open questions
 
-- **Built so far (Inner Ring):** the Threshold track T1–T14 with Crystals, lore and rewards; all bands open from the start; Index buffs (T1), the +Power bonus (T4), Wellspring (T5), the offline-cap bonus (T7) and Recalibrate (T10) work. **Rare Research (T2)** works too: six Inner Ring rares, one per pair of bands, researched in order. **Resonators (T3, more lines at T12)** work: one per rare, kept through Recalibrate. **Experiments (T6)** work: a request board paying Data for Data upgrades. The other rewards show as "coming soon". T1–T10 requirements are tuned to the timeline; T11–T14 are placeholders until Ring Schematics exist.
-- **Next to build:** Ring Schematics (T10), then Trials.
+- **Built so far (Inner Ring):** the Threshold track T1–T14 with Crystals, lore and rewards; all bands open from the start; Index buffs (T1), the +Power bonus (T4), Wellspring (T5), the offline-cap bonus (T7) and Recalibrate (T10) work. **Rare Research (T2)** works too: six Inner Ring rares, one per pair of bands, researched in order. **Resonators (T3, more lines at T12)** work: one per rare, kept through Recalibrate. **Experiments (T6)** work: a request board paying Data for Data upgrades. **Ring Schematics (T10, Spiral at T11)**, **Trials (T8)**, **Capacitors (T9)**, **Experiments tier 2 (T13)** and the **T14 Ring connection** work. **The whole Inner Ring is built**; the bot plays it start to finish. The other rewards show as "coming soon". T1–T10 requirements are tuned to the timeline; T11–T14 are placeholders until Ring Schematics exist.
+- **Next:** a full play test of the Inner Ring, then the Second Ring.
 - **Not designed yet:** the detailed upgrade lines for Resonators, the Experiments request rules and Data tree, the first set of Trials, and each Ring's rares after the Inner Ring.
-- **Trials need a "second save slot"** for the restricted run, so the main run waits untouched. Worth checking how IOM's Challenges handle this on its wiki before designing.
 - **Crystals:** every Threshold grants some, like IOM's gems per Obelisk. Spent mainly in a special upgrades shop (like CIFI's), plus small required costs such as part of each Ring connection, always covered by free Crystals. Amounts per Threshold and the shop contents aren't designed yet.
 - **Bonus-type rewards are tentative** and may be swapped for other rewards. Bonus sizes (+10% here and there) are placeholders. The sim will set them, along with each Threshold's Power requirement.
 - **Working names:** Resonators, Experiments, Trials, Detector Array, Excavation, The Archive and Stray Signals. Stray Signals is still a candidate.

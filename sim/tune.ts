@@ -10,8 +10,8 @@ import { THRESHOLDS } from '../src/data/thresholds';
 import { newGame, power } from '../src/economy';
 import { ENGAGED, THRESHOLD_TARGETS, fmt, play } from './common';
 
-/** Only tune up to Recalibrate (T10): later targets assume Ring Schematics. */
-const TUNE_UP_TO = 10;
+/** Tune the whole Inner Ring. Past T10 the bot Recalibrates on its own, so read the best Power across runs. */
+const TUNE_UP_TO = 14;
 
 /** Rounds to 2 significant figures, so the data stays readable. */
 function nice(n: number): number {
@@ -29,7 +29,7 @@ console.log('T    Target       Suggested Power   (was)');
 for (let k = 1; k <= TUNE_UP_TO; k++) {
   const target = THRESHOLD_TARGETS[k - 1];
   const run = play(ENGAGED, newGame(), () => false, target);
-  const suggested = nice(power(run.state));
+  const suggested = nice(Math.max(run.state.bestPower, power(run.state)));
   THRESHOLDS[k - 1].power = suggested;
   console.log(`T${String(k).padEnd(3)} ${fmt(target).padEnd(12)} ${String(suggested).padEnd(17)} (${original[k - 1]})`);
 }

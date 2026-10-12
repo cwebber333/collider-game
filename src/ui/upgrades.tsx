@@ -4,6 +4,7 @@ import { UPGRADES, type UpgradeId } from '../data/upgrades';
 import {
   basePower,
   canAfford,
+  capacitorPerOrder,
   chargeRate,
   conduitStrength,
   energy,
@@ -24,7 +25,7 @@ import { colors, mono, space } from './theme';
 type Props = { state: GameState; dispatch: (action: Action) => void; freeBuys?: boolean };
 
 const COLLIDER: UpgradeId[] = ['beamCurrent', 'collectorGrid', 'ringSpeed', 'sensitivity'];
-const WELLSPRING: UpgradeId[] = ['conduits', 'coils', 'taps'];
+const WELLSPRING: UpgradeId[] = ['conduits', 'coils', 'taps', 'capacitors'];
 
 /** One line describing what the upgrade does for you right now. */
 function currentEffect(state: GameState, id: UpgradeId): string {
@@ -43,6 +44,10 @@ function currentEffect(state: GameState, id: UpgradeId): string {
       return `Base Power ${formatRate(basePower(state))}`;
     case 'taps':
       return `Charge ×${formatRate(per ** level)}`;
+    case 'capacitors': {
+      const bonus = capacitorPerOrder(state) * Math.log10(1 + state.charge);
+      return `+${Math.round(bonus * 100)}% Power from ${formatAmount(state.charge)} Charge held`;
+    }
     case 'coils':
       return `Each Conduit +${formatRate(conduitStrength(state))} base Power`;
   }

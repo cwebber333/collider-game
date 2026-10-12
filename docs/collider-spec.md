@@ -167,8 +167,21 @@ Unlocks at **T6**. A board of requests, like IOM's Contracts (which deliver bars
 - **Cross-links:** once the Wellspring is open, 30% of requests also ask for Charge; 25% of requests also pay about 10 minutes' worth of a rare you know.
 - **Data upgrades:** Instrument Grants (+10% Data), Lean Protocols (requests −5%), Rare Assays (+10% rare chance), Charge Studies (+10% Charge), Conduit Studies (+10% Conduit strength), Beam Diagnostics (+5% Power). Each has a max level and costs Data (×1.4–1.5 per level).
 - **Resets on Recalibrate:** board, Data, completions and Data upgrades (like IOM's contract upgrades).
+- **Tier 2 (T13):** Data upgrade max levels ×2, and +50% Data per experiment.
 - Requests are generated with a seeded random number kept in the save, so the economy stays deterministic.
 - Sim: the engaged player completes ~15 experiments by T10 and buys a handful of Data upgrades; Threshold pacing is unchanged.
+
+## 5d. Trials
+
+Unlocks at **T8**. Goals with a twist that **complete on their own during normal play**, like IOM's Challenges (which are goals such as "Reach Floor 20 With No Upgrades", paying coins for permanent upgrades, per its wiki). Nothing pauses your run. Data: `src/data/trials.ts`.
+
+- **First set (10 Trials):** e.g. reach 10K Power with no Collector Grid this run; band 8 stable within 2 hours of a run starting; hold 1M Charge; complete 10 Experiments in one run; hold 100 Pentaquarks.
+- Each pays **10–20 Marks**. Marks buy permanent **Trial upgrades:** Practised Hands (Beam Current and Ring Speed −4% cost), Long Watch (+1 h offline cap), Quick Hands (Experiment skips 1 min faster), Keen Eye (+10% rare chance), Endurance (+5% Power).
+- Completions, Marks and upgrades are **permanent**. More Trial sets come at later Thresholds.
+
+## 5e. Ring connection (T14)
+
+T14 permits building the connection to the Second Ring (like IOM's world monuments): 5B Z bosons, 5B Higgs bosons, some of every Inner Ring rare, and 200 Crystals (players have ~595 free Crystals by then). Building it completes the Inner Ring; the Second Ring itself arrives in a later update. Data: `src/data/rings.ts`.
 
 ## 6. Thresholds (power checks)
 
@@ -240,6 +253,7 @@ Unlocks at **T5**. The Ring's mysterious power source, with **its own resource: 
 | **Conduits** | +0.25 **base Power** per level, added before every multiplier (huge at first, fades later) | Charge (100 × 2.2^L) |
 | **Taps** | ×1.2 Charge per level | Pion + Kaon, then Tau + Psi |
 | **Coils** | Each Conduit gives +15% more base Power per level (so Coils matter more as Conduits pile up) | Kaon + Tau, then Tau + Psi (×3 per level) |
+| **Capacitors** (T9) | +2% Power per level for every ×10 of **Charge held**, so holding Charge competes with spending it | Tetraquark + Psi, then Pentaquark + B meson (×3 per level) |
 
 **Resets on Recalibrate**, Charge included. The sim showed that keeping it was the main reason run 2 went fast (23% of run 1 kept vs. 66% reset), leaving no room for Ring Schematics. Permanent Wellspring head starts come from Schematics nodes instead (e.g. start with Conduits at 5).
 
@@ -252,24 +266,25 @@ Tuning notes: a first pass (+0.5 base Power per Conduit, cost ×1.6, Taps ×1.3)
 ## 10. Recalibrate (prestige layer 1)
 
 - Unlocks at **T10**. Available any time after that.
-- **Resets:** particles, Beam Current, Collector Grid, Sensitivity, Ring Speed, Wellspring.
-- **Keeps:** breached Thresholds (no repeated power checks), Particle Index levels, Ring Schematics.
-- **Earns Resonance:** `Resonance = floor(10 × (peak Power this run ÷ 2,600,000)^0.4)`, so the first Recalibrate gives about 10.
+- **Resets:** particles, all upgrades (Wellspring included), Charge, Experiments.
+- **Keeps:** breached Thresholds, Particle Index levels, Crystals, rares (known and their balances), Resonators, Ring Schematics.
+- **Earns Resonance:** `Resonance = floor(20 × (peak Power this run ÷ 50M)^0.4) × Resonance bonuses`. The first Recalibrate gives about 25.
+- **Resonance boosts Power:** every Resonance *ever earned* gives +2% Power (its own "Recalibrate" system in the stat layer). It counts earned, not unspent, so buying Schematics never weakens it, and each run starts clearly stronger than the last.
 - The button always **shows the Resonance you'll get** before you confirm. Never a surprise, and always a net gain.
 
-### Ring Schematics (first ~20 nodes of a large tree)
+Why the Power boost: without it, a run after Recalibrate only climbed back to the old peak (the first Recalibrate gave ~15 Resonance and run 2 took ~76% as long as run 1). The GDD wants each reset to be "quick to recover from and clearly stronger".
 
-The long-term goal is a **large, branching tree like CIFI's Loop Mods**, not a small skill tree like IOM's. That's why there's no separate skill tree: Schematics is the one big tree, and new branches arrive at later Thresholds (see the [Threshold Roadmap](threshold-roadmap.md)).
+### Ring Schematics
 
-Schematics give **abilities and choices**; Resonators give the steady numbers (GDD §7b). Three branches, bought with Resonance (example nodes, draft):
+The long-term goal is a **large, branching tree like CIFI's Loop Mods**, not a small skill tree like IOM's. New branches arrive at later Thresholds (see the [Threshold Roadmap](threshold-roadmap.md)). Schematics give **abilities and choices**; Resonators give the steady numbers (GDD §7b). Data: `src/data/schematics.ts`.
 
-| Branch | Example nodes |
-|---|---|
-| **Beam** (Power) | Start each run with Wellspring Conduits at level 5 · Breach Thresholds automatically when ready · A big ×2 Power node (expensive, one-off) |
-| **Lens** (Detection) | A band's rare also appears on its neighbours at half rate · Sensitivity is kept through Recalibrate · Each Index entry gains a second buff at level 5 |
-| **Spiral** (Speed/automation) | Start each run with Ring Speed at level 9 (band 4 stable) · **Band Cycle** (auto-rotate between 2 chosen bands) · **Auto-Buy** (buys upgrades automatically) · **Auto-Research** |
+| Branch | Opens | Nodes (Resonance cost) |
+|---|---|---|
+| **Beam** | T10 | Primed Conduits (5): runs start with Conduits 10 · Pressure Valve (4): auto-breach Thresholds · Primed Beam (18): runs start with Beam Current 30 · Overdrive Core (60): ×2 Power |
+| **Lens** | T10 | Steady Sensitivity (8): Sensitivity kept through Recalibrate · Neighbour Signals (18): a band's rare also appears on neighbouring bands at half chance · Extra Bench (10): a 4th Experiment request · Annotated Index (60): Index buffs ×1.5 |
+| **Spiral** | T11 | Spun Up (8): runs start with band 4 stable · Standing Orders (12): auto Rare Research · Auto-Buy (30): buys Collider upgrades (switchable) · Deep Start (45): runs start with band 7 stable |
 
-Unlock-style nodes (Band Cycle, Auto-Buy) are the "CIFI feeling" of new mechanics, not just bigger numbers. Avoid small "+X%" nodes for anything a Resonator already boosts.
+The whole tree costs ~250 Resonance; the engaged player has ~110 by T14, so it carries into the Second Ring. Band Cycle (auto-rotate between bands) is planned for a later version.
 
 ---
 
@@ -284,7 +299,7 @@ The timeline lives in the [Threshold Roadmap](threshold-roadmap.md) (engaged pla
 | T1 | ~10 min |
 | T5 (Wellspring) | ~4.5 h |
 | T10 (Recalibrate) | ~1.5 days |
-| T14 (connect to the Second Ring) | ~4 days (needs Ring Schematics) |
+| T14 + Second Ring connected (Inner Ring complete) | ~4 days (sim: engaged ~3 days, watching ~13 h, idle ~7.4 days) |
 
 `npm run sim` reports each Threshold's time against its target for watching, engaged and idle players.
 

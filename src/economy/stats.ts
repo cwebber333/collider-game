@@ -6,6 +6,7 @@ import { BASE_POWER, DENSITY_GROWTH, ENERGY_PER_BAND, OFF_BAND_EXPONENT } from '
 import { PARTICLES, type ParticleId } from '../data/particles';
 import { UPGRADES } from '../data/upgrades';
 import { hasFeature } from './progress';
+import { neighbourRareShare } from './schematics';
 import { zeroParticles, type GameState, type ParticleAmounts } from './state';
 import { resolve } from './statLayer';
 
@@ -83,7 +84,22 @@ export function collisionsPerSecond(state: GameState, band: number): number {
   return (power(state) / density(state, band)) * bandEfficiency(state, band);
 }
 
-/** Chance per collision of the band's rare particle (0 if hidden or none). */
+/** Chance per collision of each rare on a band: its own, plus neighbouring bands' at a share (Neighbour Signals). */
+export function rareChances(state: GameState, band: number): Partial<Record<ParticleId, number>> {
+  const chances: Partial<Record<ParticleId, number>> = {};
+  const own = bandDef(band).rare;
+  if (own) chances[own] = rareChance(state, band);
+  const share = neighbourRareShare(state);
+  if (share > 0) {
+    for (const near of [band - 1, band + 1]) {
+      const rare = BANDS[near - 1]?.rare;
+      if (rare && rare !== own) chances[rare] = (chances[rare] ?? 0) + rareChance(state, near) * share;
+    }
+  }
+  return chances;
+}
+
+/** Chance per collision of the band's own rare particle (0 if hidden or none). */
 export function rareChance(state: GameState, band: number): number {
   const rareId = bandDef(band).rare;
   if (!rareId) return 0;
@@ -104,6 +120,8 @@ export function productionRates(state: GameState, band = state.selectedBand): Pa
   for (const [id, share] of Object.entries(def.mix) as [ParticleId, number][]) {
     rates[id] = collisions * perCollision * share;
   }
-  if (def.rare) rates[def.rare] = collisions * rareChance(state, band);
+  for (const [rare, chance] of Object.entries(rareChances(state, band)) as [ParticleId, number][]) {
+    rates[rare] = collisions * chance;
+  }
   return rates;
 }

@@ -52,6 +52,8 @@ export interface RunLog {
   buys: Map<Target, number>;
   /** Seconds when each rare became known (researched) during this run. */
   raresAt: Map<ParticleId, number>;
+  /** Seconds at each Recalibrate. */
+  recalibratedAt: number[];
   /** Seconds when `done` became true. */
   end?: number;
 }
@@ -64,6 +66,7 @@ export function play(player: Player, start: GameState, done: (s: GameState) => b
     breachedAt: new Map(),
     buys: new Map(),
     raresAt: new Map(),
+    recalibratedAt: [],
   };
   let state = start;
   let t = 0;
@@ -76,6 +79,7 @@ export function play(player: Player, start: GameState, done: (s: GameState) => b
     }
     for (let k = start.breached + 1; k <= s.breached; k++) if (!log.breachedAt.has(k)) log.breachedAt.set(k, t);
     for (const rare of s.rares) if (!start.rares.includes(rare) && !log.raresAt.has(rare)) log.raresAt.set(rare, t);
+    while (log.recalibratedAt.length < s.recalibrations - start.recalibrations) log.recalibratedAt.push(t);
   };
   const onBuy = (_: GameState, id: Target) => {
     log.firstUpgrade ??= t; // `??=` assigns only if still undefined

@@ -23,9 +23,11 @@ export const OFFLINE_CAP_SECONDS = 24 * 60 * 60;
 export const INDEX_LEVEL_GROWTH = 5;
 
 /** Resonance = floor(RESONANCE_SCALE × (peak Power ÷ RESONANCE_POWER)^RESONANCE_EXPONENT) */
-export const RESONANCE_SCALE = 10;
+export const RESONANCE_SCALE = 20;
 export const RESONANCE_POWER = 50_000_000; // T10's requirement: the first Recalibrate gives ~10
 export const RESONANCE_EXPONENT = 0.4;
+/** Every Resonance ever earned gives this much Power (+2% each). Counts earned, not unspent, so spending never weakens it. */
+export const POWER_PER_RESONANCE = 0.02;
 
 /**
  * Longest step `advance` takes at once. Long offline periods are split into

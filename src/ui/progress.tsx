@@ -2,10 +2,13 @@
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { FEATURES } from '../data/features';
+import { RING_CONNECTIONS } from '../data/rings';
 import { INTRO_LORE, THRESHOLDS, type ThresholdReward } from '../data/thresholds';
 import {
   canBreach,
+  canBuildConnection,
   canRecalibrate,
+  nextConnection,
   nextThreshold,
   power,
   resonanceGain,
@@ -14,6 +17,7 @@ import {
   type GameState,
 } from '../economy';
 import { Button, Card, ProgressBar } from './common';
+import { CostLines } from './cost';
 import { formatCost, formatRate } from './format';
 import { colors, mono, space } from './theme';
 
@@ -98,6 +102,32 @@ export function ThresholdListCard({ state }: { state: GameState }) {
   );
 }
 
+/** The build that opens the next Ring, once its milestone Threshold allows it. */
+export function ConnectionCard({ state, dispatch }: Props) {
+  if ((state.ringsConnected ?? 0) >= 1) {
+    return (
+      <Card title="The Second Ring" style={{ borderColor: colors.rare }}>
+        <Text style={styles.lore}>“{RING_CONNECTIONS[0].lore}”</Text>
+        <Text style={styles.body}>The Inner Ring is complete. What lies in the Second Ring arrives in a future update.</Text>
+      </Card>
+    );
+  }
+  const def = nextConnection(state);
+  if (!def) return null;
+  return (
+    <Card title={`Connect to ${def.name}`} style={{ borderColor: colors.rare }}>
+      <Text style={styles.body}>A seam in the outer wall. Build the connection to reach the next ring out.</Text>
+      <View style={styles.connectionCost}>
+        <CostLines state={state} cost={def.cost} />
+        <Text style={[styles.powerNumbers, { color: state.crystals >= def.crystals ? colors.good : colors.bad }]}>
+          ◆ {def.crystals}
+        </Text>
+      </View>
+      <Button label="Build the connection" disabled={!canBuildConnection(state)} onPress={() => dispatch({ type: 'buildConnection' })} />
+    </Card>
+  );
+}
+
 export function LoreCard({ state }: { state: GameState }) {
   const note = state.breached === 0 ? INTRO_LORE : THRESHOLDS[state.breached - 1].lore;
   return (
@@ -121,10 +151,10 @@ export function RecalibrateCard({ state, dispatch }: Props) {
   return (
     <Card title="Recalibrate" right={<Text style={styles.unlocks}>Resonance {state.resonance}</Text>}>
       <Text style={styles.body}>
-        Resets particles and all upgrades (Wellspring too). Keeps the Particle Index and breached Thresholds.
+        Resets particles, upgrades (Wellspring too) and Experiments. Keeps the Index, Thresholds, Crystals, rares, Resonators and Schematics.
       </Text>
       <Text style={styles.body}>
-        Gain <Text style={{ color: colors.rare, fontWeight: '700' }}>+{gain} Resonance</Text>. (Ring Schematics to spend it on are coming.)
+        Gain <Text style={{ color: colors.rare, fontWeight: '700' }}>+{gain} Resonance</Text> for Ring Schematics.
       </Text>
       <Button
         label={armed ? 'Tap again to Recalibrate' : `Recalibrate (+${gain})`}
@@ -155,4 +185,5 @@ const styles = StyleSheet.create({
   powerNumbers: { color: colors.text, fontFamily: mono, fontSize: 14 },
   lore: { color: colors.text, fontSize: 14, fontStyle: 'italic', lineHeight: 20 },
   body: { color: colors.text, fontSize: 13, lineHeight: 18 },
+  connectionCost: { flexDirection: 'row', flexWrap: 'wrap', gap: space.md },
 });

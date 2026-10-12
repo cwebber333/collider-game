@@ -29,8 +29,8 @@ export const INTRO_LORE = 'The Ring was already humming when we found the contro
 
 const unlock = (feature: FeatureId): ThresholdReward => ({ kind: 'unlock', feature });
 
-// Inner Ring: T1–T14. T1–T10 Power requirements come from `npm run tune`
-// (engaged-player timeline); T11–T14 are placeholders until Ring Schematics exist.
+// Inner Ring: T1–T14. Power requirements come from `npm run tune` (engaged-player
+// timeline), smoothed so each one is higher than the last.
 export const THRESHOLDS: readonly ThresholdDef[] = [
   {
     power: 9,
@@ -69,7 +69,7 @@ export const THRESHOLDS: readonly ThresholdDef[] = [
     lore: 'Found a list of experiments on the console. Half are crossed out, in my handwriting.',
   },
   {
-    power: 44_000,
+    power: 40_000,
     crystals: 40,
     reward: { kind: 'bonus', bonus: 'offlineCap', amount: 4 * 3600 },
     lore: 'The Ring kept running while we slept. It seems to prefer it that way.',
@@ -81,7 +81,7 @@ export const THRESHOLDS: readonly ThresholdDef[] = [
     lore: 'Ran the Ring with half its systems off. It learned faster than we did.',
   },
   {
-    power: 2_600_000,
+    power: 2_000_000,
     crystals: 50,
     reward: unlock('capacitors'),
     lore: 'The Wellspring stores what it can\'t use. Where does the rest go?',
@@ -93,25 +93,25 @@ export const THRESHOLDS: readonly ThresholdDef[] = [
     lore: 'Reset everything today. The Ring didn\'t forget a thing.',
   },
   {
-    power: 200_000_000,
+    power: 94_000_000,
     crystals: 60,
     reward: unlock('schematicsSpiral'),
     lore: 'Taught the Ring to cycle on its own. It already knew how.',
   },
   {
-    power: 800_000_000,
+    power: 180_000_000,
     crystals: 65,
     reward: unlock('resonatorLines2'),
     lore: 'Logged a graviton. Nobody has ever logged a graviton.',
   },
   {
-    power: 3_200_000_000,
+    power: 330_000_000,
     crystals: 70,
     reward: unlock('experimentsTier2'),
     lore: 'The experiments are running themselves now. The results are addressed to someone else.',
   },
   {
-    power: 13_000_000_000,
+    power: 1_200_000_000,
     crystals: 75,
     reward: { kind: 'milestone', feature: 'secondRing' },
     lore: 'There\'s a seam in the outer wall. Behind it: another ring, larger, humming at a frequency we never set.',

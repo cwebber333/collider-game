@@ -16,6 +16,7 @@ export const UPGRADE_IDS = [
   'conduits',
   'taps',
   'coils',
+  'capacitors',
 ] as const;
 
 export type UpgradeId = (typeof UPGRADE_IDS)[number];
@@ -129,6 +130,19 @@ export const UPGRADES: Record<UpgradeId, UpgradeDef> = {
     costTiers: [
       { fromLevel: 0, growth: 2, costs: [{ particle: 'pion', base: 50_000 }, { particle: 'kaon', base: 25_000 }] },
       { fromLevel: 10, growth: 2, costs: [{ particle: 'tau', base: 5_000_000 }, { particle: 'psi', base: 3_000_000 }] },
+    ],
+  },
+  // Capacitors turn stored Charge into Power, so holding Charge is a choice
+  // against spending it (Conduits, Rare Research, Experiments). Paid in a rare.
+  capacitors: {
+    id: 'capacitors',
+    name: 'Capacitors',
+    description: '+2% Power per level for every ×10 of Charge you hold',
+    perLevel: 0.02,
+    unlockedBy: 'capacitors',
+    costTiers: [
+      { fromLevel: 0, growth: 3, costs: [{ particle: 'tetraquark', base: 10 }, { particle: 'psi', base: 200_000 }] },
+      { fromLevel: 8, growth: 3, costs: [{ particle: 'pentaquark', base: 1_000 }, { particle: 'bmeson', base: 1_000_000_000 }] },
     ],
   },
   // Coils make every Conduit stronger, so they matter more as Conduits get

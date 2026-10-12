@@ -8,9 +8,11 @@ import { BreakdownCard } from './src/ui/breakdown';
 import { BandDial, ParticlesCard, StatsHeader } from './src/ui/collider';
 import { AwayCard, DevTools } from './src/ui/misc';
 import { IndexCard } from './src/ui/particle-index';
-import { LoreCard, RecalibrateCard, ThresholdCard, ThresholdListCard } from './src/ui/progress';
+import { ConnectionCard, LoreCard, RecalibrateCard, ThresholdCard, ThresholdListCard } from './src/ui/progress';
 import { RareResearchCard, ResonatorsCard } from './src/ui/rares';
 import { ExperimentsCard } from './src/ui/experiments';
+import { SchematicsCard } from './src/ui/schematics';
+import { TrialsCard } from './src/ui/trials';
 import { colors, space } from './src/ui/theme';
 import { UpgradesCard, WellspringCard } from './src/ui/upgrades';
 
@@ -52,12 +54,15 @@ function Game() {
       <BandDial {...props} />
       <ParticlesCard state={state} />
       <ThresholdCard {...props} />
+      <ConnectionCard {...props} />
       <UpgradesCard {...props} freeBuys={dev.freeBuys} />
       <RareResearchCard {...props} freeBuys={dev.freeBuys} />
       <ResonatorsCard {...props} freeBuys={dev.freeBuys} />
       <WellspringCard {...props} freeBuys={dev.freeBuys} />
       <ExperimentsCard {...props} freeBuys={dev.freeBuys} />
+      <TrialsCard {...props} />
       <RecalibrateCard {...props} />
+      <SchematicsCard {...props} />
       <ThresholdListCard state={state} />
       <IndexCard state={state} />
       <LoreCard state={state} />
