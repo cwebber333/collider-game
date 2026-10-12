@@ -8,6 +8,7 @@ Solo hobby idle/incremental mobile game: a mysterious ancient particle collider.
 - `docs/GDD.md`: game design document (pillars, systems, MVP scope)
 - `docs/collider-spec.md`: core loop numbers and formulas for the MVP
 - `docs/threshold-roadmap.md`: every Threshold across all four Rings and what it unlocks
+- `docs/cross-link-map.md`: which systems feed which, and the stat composition rule (additive within a system, multiplicative across)
 - `docs/design-decisions.md`: log of decisions and why
 - `docs/research/inspiration-games.md`: Idle Obelisk Miner, Cell: Idle Factory Incremental, Cave Heroes
 

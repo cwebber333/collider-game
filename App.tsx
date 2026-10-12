@@ -1,12 +1,16 @@
 import { StatusBar } from 'expo-status-bar';
+import { useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import type { StatId } from './src/economy';
 import { useGame } from './src/game/useGame';
+import { BreakdownCard } from './src/ui/breakdown';
 import { BandDial, ParticlesCard, StatsHeader } from './src/ui/collider';
 import { AwayCard, DevTools } from './src/ui/misc';
 import { IndexCard } from './src/ui/particle-index';
 import { LoreCard, RecalibrateCard, ThresholdCard, ThresholdListCard } from './src/ui/progress';
-import { RareResearchCard } from './src/ui/rares';
+import { RareResearchCard, ResonatorsCard } from './src/ui/rares';
+import { ExperimentsCard } from './src/ui/experiments';
 import { colors, space } from './src/ui/theme';
 import { UpgradesCard, WellspringCard } from './src/ui/upgrades';
 
@@ -23,6 +27,8 @@ export default function App() {
 
 function Game() {
   const { state, dispatch, away, dismissAway, dev } = useGame();
+  // Which stat's breakdown is open (null = none).
+  const [inspecting, setInspecting] = useState<StatId | null>(null);
   if (!state) {
     return (
       <View style={styles.loading}>
@@ -39,13 +45,18 @@ function Game() {
       </View>
       {dev.freeBuys && <Text style={styles.devBanner}>FREE BUYS ON (dev tools)</Text>}
       {away && <AwayCard report={away} onDismiss={dismissAway} />}
-      <StatsHeader state={state} />
+      <StatsHeader state={state} onInspect={(stat) => setInspecting(inspecting === stat ? null : stat)} />
+      {inspecting && (
+        <BreakdownCard state={state} stat={inspecting} onSelect={setInspecting} onClose={() => setInspecting(null)} />
+      )}
       <BandDial {...props} />
       <ParticlesCard state={state} />
       <ThresholdCard {...props} />
       <UpgradesCard {...props} freeBuys={dev.freeBuys} />
       <RareResearchCard {...props} freeBuys={dev.freeBuys} />
+      <ResonatorsCard {...props} freeBuys={dev.freeBuys} />
       <WellspringCard {...props} freeBuys={dev.freeBuys} />
+      <ExperimentsCard {...props} freeBuys={dev.freeBuys} />
       <RecalibrateCard {...props} />
       <ThresholdListCard state={state} />
       <IndexCard state={state} />

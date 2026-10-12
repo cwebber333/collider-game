@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { BANDS } from '../data/bands';
-import { PARTICLES } from '../data/particles';
+import { BOARD_SIZE, DATA_UPGRADES } from '../data/experiments';
+import { PARTICLES, type ParticleId } from '../data/particles';
 import { RARE_CHAIN } from '../data/rares';
+import { RESONATORS } from '../data/resonators';
 import { OFFLINE_CAP_SECONDS } from '../data/constants';
 import { THRESHOLDS } from '../data/thresholds';
 import { UPGRADE_IDS, UPGRADES } from '../data/upgrades';
@@ -11,10 +13,22 @@ import {
   apply,
   bandCap,
   bandEfficiency,
+  basePower,
+  breakdown,
   canBreach,
+  conduitStrength,
+  fillBoard,
+  newExperiments,
+  resolve,
+  dataUpgradeCost,
+  requestData,
+  chargeRate,
   hasFeature,
   nextResearch,
+  particleYield,
   researchCost,
+  resonatorCost,
+  resonatorLevel,
   offlineCap,
   thresholdFor,
   density,
@@ -102,10 +116,9 @@ describe('production', () => {
     expect(capped.elapsed).toBe(OFFLINE_CAP_SECONDS);
   });
 
-  it('higher bands are denser; Stabilizers thin them', () => {
+  it('higher bands are denser', () => {
     expect(density(newGame(), 1)).toBe(1);
     expect(density(newGame(), 3)).toBeCloseTo(1.8 ** 2);
-    expect(density(withLevels({ stabilizers: 1 }), 3)).toBeCloseTo(1.8 ** 2 * 0.96);
   });
 });
 
@@ -255,6 +268,197 @@ describe('rare particles', () => {
   });
 });
 
+describe('Wellspring', () => {
+  const at = () => thresholdFor('wellspring')!;
+
+  it('makes Charge only once unlocked, offline too', () => {
+    expect(chargeRate(game({ breached: at() - 1 }))).toBe(0);
+    expect(chargeRate(game({ breached: at() }))).toBe(1);
+    expect(advance(game({ breached: at() }), 100).charge).toBeCloseTo(100);
+  });
+
+  it('Taps multiply the Charge rate', () => {
+    expect(chargeRate(withLevels({ taps: 2 }, { breached: at() }))).toBeCloseTo(UPGRADES.taps.perLevel ** 2);
+  });
+
+  it('Conduits cost Charge and add base Power before multipliers', () => {
+    const ready = withLevels({ beamCurrent: 10 }, { breached: at(), charge: 1_000 });
+    const cost = upgradeCost(ready, 'conduits')!;
+    expect(Object.keys(cost)).toEqual(['charge']);
+    const built = apply(ready, { type: 'buy', upgrade: 'conduits' });
+    expect(built.charge).toBe(1_000 - cost.charge!);
+    expect(basePower(built)).toBeCloseTo(1 + UPGRADES.conduits.perLevel);
+    expect(power(built) / power(ready)).toBeCloseTo(1 + UPGRADES.conduits.perLevel); // base × every multiplier
+  });
+
+  it('Coils make every Conduit stronger', () => {
+    const s = withLevels({ conduits: 10, coils: 3 }, { breached: at() });
+    const perConduit = UPGRADES.conduits.perLevel * (1 + UPGRADES.coils.perLevel * 3);
+    expect(basePower(s)).toBeCloseTo(1 + 10 * perConduit);
+  });
+
+  it('resets on Recalibrate, Charge included', () => {
+    const s = withLevels({ conduits: 4, taps: 3 }, { breached: thresholdFor('recalibrate')!, charge: 500 });
+    const after = apply(s, { type: 'recalibrate' });
+    expect(after.charge).toBe(0);
+    expect(after.levels.conduits).toBe(0);
+    expect(after.levels.taps).toBe(0);
+  });
+});
+
+describe('Experiments', () => {
+  const at = () => thresholdFor('experiments')!;
+  /** A state about to breach the Experiments Threshold, with some particles discovered. */
+  const ready = () => {
+    const lifetime = { ...newGame().lifetime, photon: 1e4, electron: 1e4, muon: 1e4, pion: 1e4 };
+    return withLevels({ beamCurrent: 60, ringSpeed: 12 }, { breached: at() - 1, lifetime });
+  };
+
+  it('fill the board with 3 requests when unlocked', () => {
+    const s = apply(ready(), { type: 'breach' });
+    expect(s.breached).toBe(at());
+    expect(s.experiments.requests).toHaveLength(BOARD_SIZE);
+    for (const request of s.experiments.requests) {
+      const ids = Object.keys(request.base);
+      expect(ids.length).toBeGreaterThanOrEqual(1);
+      expect(ids.length).toBeLessThanOrEqual(2);
+      for (const id of ids) if (id !== 'charge') expect(s.lifetime[id as ParticleId]).toBeGreaterThan(0); // only discovered particles
+    }
+  });
+
+  it('are the same every time for the same state (seeded)', () => {
+    expect(apply(ready(), { type: 'breach' }).experiments).toEqual(apply(ready(), { type: 'breach' }).experiments);
+  });
+
+  it('pay Data when completed, then refill the board', () => {
+    const s = apply(ready(), { type: 'breach' });
+    const rich = { ...s, particles: Object.fromEntries(Object.keys(s.particles).map((k) => [k, 1e15])) as typeof s.particles };
+    const pay = requestData(rich, rich.experiments.requests[0]);
+    const done = apply(rich, { type: 'completeExperiment', index: 0 });
+    expect(done.experiments.data).toBe(pay);
+    expect(done.experiments.completed).toBe(1);
+    expect(done.experiments.requests).toHaveLength(BOARD_SIZE);
+  });
+
+  it('can be skipped, with a cooldown', () => {
+    const s = apply(ready(), { type: 'breach' });
+    const skipped = apply(s, { type: 'skipExperiment', index: 1 });
+    expect(skipped.experiments.requests).toHaveLength(BOARD_SIZE);
+    expect(skipped.experiments.requests[1]).not.toEqual(s.experiments.requests[1]);
+    expect(apply(skipped, { type: 'skipExperiment', index: 0 })).toBe(skipped); // on cooldown
+  });
+
+  it('Data buys upgrades that boost other systems', () => {
+    const s = apply(ready(), { type: 'breach' });
+    const funded = { ...s, experiments: { ...s.experiments, data: 1_000 } };
+    const bought = apply(funded, { type: 'buyDataUpgrade', upgrade: 'diagnostics' });
+    expect(bought.experiments.data).toBe(1_000 - dataUpgradeCost(funded, 'diagnostics')!);
+    expect(power(bought) / power(funded)).toBeCloseTo(1 + DATA_UPGRADES.diagnostics.perLevel);
+  });
+
+  it('reset on Recalibrate', () => {
+    const s = apply(ready(), { type: 'breach' });
+    const later = { ...s, breached: thresholdFor('recalibrate')!, experiments: { ...s.experiments, data: 500, completed: 9, levels: { grants: 3 } } };
+    const after = apply(later, { type: 'recalibrate' });
+    expect(after.experiments.data).toBe(0);
+    expect(after.experiments.completed).toBe(0);
+    expect(after.experiments.levels).toEqual({});
+  });
+});
+
+describe('stat layer', () => {
+  it('adds within a system and multiplies across systems', () => {
+    // Index: Photon and Kaon both give +5% Power per level (same system: they add).
+    const lifetime = { ...newGame().lifetime, photon: 500, kaon: 500 }; // Index level 2 each
+    const s = withLevels({ beamCurrent: 3 }, { breached: thresholdFor('indexBuffs')!, lifetime, resonators: { antiproton: 2 }, rares: ['positron', 'antiproton'] });
+    const index = 1 + 0.05 * 2 + 0.05 * 2; // +20%, summed
+    const resonators = 1 + RESONATORS[1].perLevel * 2; // a separate system: multiplies
+    expect(power(s)).toBeCloseTo(1.2 ** 3 * index * resonators);
+  });
+
+  it('breaks a stat down by system, and the parts multiply to the total', () => {
+    const s = withLevels({ beamCurrent: 5, conduits: 4 }, { breached: thresholdFor('wellspring')!, resonators: { positron: 1 } });
+    const b = breakdown(s, 'power');
+    expect(b.base).toBeCloseTo(basePower(s));
+    expect(b.systems.map((x) => x.system)).toContain('collider');
+    expect(b.systems.reduce((prod, x) => prod * x.factor, b.base)).toBeCloseTo(power(s));
+    expect(resolve(s, 'power')).toBeCloseTo(power(s));
+  });
+
+  it('Conduit Studies (Experiments) make Conduits stronger', () => {
+    const s = withLevels({ coils: 2 }, { breached: thresholdFor('experiments')! });
+    const studied = { ...s, experiments: { ...s.experiments, levels: { conduitStudies: 3 } } };
+    // Coils (Wellspring) and Conduit Studies (Experiments) are different systems, so they multiply.
+    expect(conduitStrength(studied) / conduitStrength(s)).toBeCloseTo(1 + 0.1 * 3);
+  });
+});
+
+describe('cross-links', () => {
+  it('later Rare Research costs Wellspring Charge', () => {
+    expect(RARE_CHAIN.find((r) => r.rare === 'pentaquark')!.cost!.charge).toBeGreaterThan(0);
+  });
+
+  it('some Experiment requests ask for Charge, and some pay a rare', () => {
+    const lifetime = { ...newGame().lifetime, photon: 1e4, electron: 1e4, muon: 1e4 };
+    const base = withLevels({ beamCurrent: 40, taps: 3 }, { breached: thresholdFor('experiments')!, lifetime, rares: ['positron', 'antiproton'] });
+    const requests = Array.from({ length: 40 }, (_, seed) =>
+      fillBoard({ ...base, experiments: newExperiments(seed + 1) }).experiments.requests,
+    ).flat();
+    expect(requests.some((r) => r.base.charge !== undefined)).toBe(true);
+    const paying = requests.find((r) => r.rareReward);
+    expect(paying).toBeDefined();
+    expect(['positron', 'antiproton']).toContain(paying!.rareReward!.rare);
+  });
+
+  it('a rare reward is added on completion (and counts for the Index)', () => {
+    const s = game({ breached: thresholdFor('experiments')!, particles: { ...newGame().particles, photon: 100 } });
+    const request = { base: { photon: 10 }, rareReward: { rare: 'positron' as const, amount: 4 } };
+    const withRequest = { ...s, experiments: { ...s.experiments, requests: [request] } };
+    const done = apply(withRequest, { type: 'completeExperiment', index: 0 });
+    expect(done.particles.positron).toBe(4);
+    expect(done.lifetime.positron).toBe(4);
+  });
+});
+
+describe('Resonators', () => {
+  const rich = (overrides: Partial<GameState> = {}) =>
+    game({
+      breached: thresholdFor('resonators')!,
+      particles: { ...newGame().particles, positron: 1e6, antiproton: 1e6, electron: 1e9, muon: 1e9 },
+      ...overrides,
+    });
+
+  it('unlock at their Threshold and need their rare researched', () => {
+    expect(resonatorCost(rich({ breached: thresholdFor('resonators')! - 1 }), 'positron')).toBeNull();
+    expect(resonatorCost(rich(), 'positron')).not.toBeNull();
+    expect(resonatorCost(rich(), 'antiproton')).toBeNull(); // not researched yet
+    expect(resonatorCost(rich({ rares: ['positron', 'antiproton'] }), 'antiproton')).not.toBeNull();
+    expect(resonatorCost(rich({ rares: [...RARE_CHAIN.map((r) => r.rare)] }), 'graviton')).toBeNull(); // later Threshold
+  });
+
+  it('cost their rare plus a particle, and get pricier each level', () => {
+    const first = resonatorCost(rich(), 'positron')!;
+    const built = apply(rich(), { type: 'buildResonator', rare: 'positron' });
+    expect(resonatorLevel(built, 'positron')).toBe(1);
+    expect(built.particles.positron).toBe(1e6 - first.positron!);
+    expect(resonatorCost(built, 'positron')!.positron!).toBeGreaterThan(first.positron!);
+  });
+
+  it('boost their system', () => {
+    const base = rich({ rares: ['positron', 'antiproton'] });
+    const yielded = apply(base, { type: 'buildResonator', rare: 'positron' });
+    expect(particleYield(yielded) / particleYield(base)).toBeCloseTo(1 + RESONATORS[0].perLevel);
+    const powered = apply(base, { type: 'buildResonator', rare: 'antiproton' });
+    expect(power(powered) / power(base)).toBeCloseTo(1 + RESONATORS[1].perLevel);
+  });
+
+  it('stop at their max level', () => {
+    const tetra = RESONATORS.find((r) => r.rare === 'tetraquark')!;
+    const maxed = rich({ rares: ['positron', 'antiproton', 'tetraquark'], resonators: { tetraquark: tetra.maxLevel! } });
+    expect(resonatorCost(maxed, 'tetraquark')).toBeNull();
+  });
+});
+
 describe('Recalibrate', () => {
   it('is locked before its Threshold', () => {
     const s = game({ breached: thresholdFor('recalibrate')! - 1 });
@@ -264,11 +468,12 @@ describe('Recalibrate', () => {
 
   it('resets the run and the Wellspring but keeps Index, Thresholds and Crystals', () => {
     const before = withLevels(
-      { beamCurrent: 70, ringSpeed: 11, conduits: 5, stabilizers: 3 },
+      { beamCurrent: 70, ringSpeed: 11, conduits: 5, coils: 3 },
       {
         breached: thresholdFor('recalibrate')!,
         crystals: 120,
         rares: ['positron', 'antiproton'],
+        resonators: { positron: 3 },
         peakPower: THRESHOLDS[thresholdFor('recalibrate')! - 1].power,
         particles: { ...newGame().particles, higgs: 1_000, positron: 7 },
         lifetime: { ...newGame().lifetime, higgs: 5_000 },
@@ -287,10 +492,11 @@ describe('Recalibrate', () => {
     expect(after.selectedBand).toBe(1);
     expect(after.lifetime.higgs).toBe(5_000);
     expect(after.levels.conduits).toBe(0);
-    expect(after.levels.stabilizers).toBe(0);
+    expect(after.levels.coils).toBe(0);
     expect(after.breached).toBe(thresholdFor('recalibrate'));
     expect(after.crystals).toBe(120);
     expect(after.rares).toEqual(['positron', 'antiproton']);
+    expect(after.resonators).toEqual({ positron: 3 }); // Resonators are permanent
     expect(after.particles.positron).toBe(7); // rares are kept, like IOM's veins
   });
 });

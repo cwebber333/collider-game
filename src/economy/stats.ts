@@ -1,18 +1,13 @@
-// Derived numbers: Power, Yield, density, production rates, Index levels.
+// Derived numbers: bands, Power, Yield, Charge, production rates.
+// Stats come from the stat layer (statLayer.ts), which applies the composition rule.
 // Everything here is read-only: state in, number out.
 import { BANDS, type BandDef } from '../data/bands';
-import {
-  BASE_POWER,
-  BASE_YIELD,
-  DENSITY_GROWTH,
-  ENERGY_PER_BAND,
-  INDEX_LEVEL_GROWTH,
-  OFF_BAND_EXPONENT,
-} from '../data/constants';
-import { PARTICLE_IDS, PARTICLES, type BuffKind, type ParticleId } from '../data/particles';
+import { BASE_POWER, DENSITY_GROWTH, ENERGY_PER_BAND, OFF_BAND_EXPONENT } from '../data/constants';
+import { PARTICLES, type ParticleId } from '../data/particles';
 import { UPGRADES } from '../data/upgrades';
-import { hasFeature, thresholdBonus } from './progress';
+import { hasFeature } from './progress';
 import { zeroParticles, type GameState, type ParticleAmounts } from './state';
+import { resolve } from './statLayer';
 
 /** Rounding slack so 3 levels of ×2^(1/3) count as exactly ×2. */
 const EPSILON = 1e-9;
@@ -53,78 +48,34 @@ export function bandDef(band: number): BandDef {
   return def;
 }
 
-// ---------- Particle Index ----------
+// ---------- Collider stats (resolved by the stat layer) ----------
 
-/** Level k needs indexBase × growth^(k−1) lifetime collected; 0 before the first. */
-export function indexLevel(state: GameState, id: ParticleId): number {
-  const collected = state.lifetime[id];
-  let need = PARTICLES[id].indexBase;
-  let level = 0;
-  while (collected >= need) {
-    level++;
-    need *= INDEX_LEVEL_GROWTH;
-  }
-  return level;
+/** Base Power each Conduit adds (Coils and other systems raise it). */
+export function conduitStrength(state: GameState): number {
+  return resolve(state, 'conduitStrength');
 }
 
-/** Index level plus progress toward the next one. */
-export function indexProgress(state: GameState, id: ParticleId): { level: number; collected: number; next: number } {
-  const level = indexLevel(state, id);
-  return { level, collected: state.lifetime[id], next: PARTICLES[id].indexBase * INDEX_LEVEL_GROWTH ** level };
+/** Flat Power before multipliers: 1 plus the Conduits. */
+export function basePower(state: GameState): number {
+  return BASE_POWER + conduitStrength(state) * state.levels.conduits;
 }
 
-export function indexBuffsActive(state: GameState): boolean {
-  return hasFeature(state, 'indexBuffs');
-}
-
-/** Summed percent bonus for an additive buff kind, e.g. 0.15 for +15%. */
-export function buffBonus(state: GameState, kind: BuffKind): number {
-  if (!indexBuffsActive(state)) return 0;
-  let total = 0;
-  for (const id of PARTICLE_IDS) {
-    const { buff } = PARTICLES[id];
-    if (buff.kind === kind) total += buff.perLevel * indexLevel(state, id);
-  }
-  return total;
-}
-
-/** Multiplier for a reduction buff kind, e.g. 0.97³ ≈ 0.913. */
-export function buffReduction(state: GameState, kind: BuffKind): number {
-  if (!indexBuffsActive(state)) return 1;
-  let mult = 1;
-  for (const id of PARTICLE_IDS) {
-    const { buff } = PARTICLES[id];
-    if (buff.kind === kind) mult *= (1 - buff.perLevel) ** indexLevel(state, id);
-  }
-  return mult;
-}
-
-// ---------- Collider stats ----------
-
-export function wellspringPowerMult(state: GameState): number {
-  const raw = UPGRADES.conduits.perLevel ** state.levels.conduits;
-  return 1 + (raw - 1) * (1 + buffBonus(state, 'wellspring'));
+/** Wellspring Charge per second (0 until the Wellspring is unlocked). */
+export function chargeRate(state: GameState): number {
+  return hasFeature(state, 'wellspring') ? resolve(state, 'chargeRate') : 0;
 }
 
 export function power(state: GameState): number {
-  return (
-    BASE_POWER *
-    UPGRADES.beamCurrent.perLevel ** state.levels.beamCurrent *
-    (1 + buffBonus(state, 'power')) *
-    (1 + thresholdBonus(state, 'power')) *
-    wellspringPowerMult(state)
-  );
+  return resolve(state, 'power');
 }
 
 /** Particles per collision. */
 export function particleYield(state: GameState): number {
-  const base = BASE_YIELD + UPGRADES.collectorGrid.perLevel * state.levels.collectorGrid;
-  return base * (1 + buffBonus(state, 'yield'));
+  return resolve(state, 'yield');
 }
 
-export function density(state: GameState, band: number): number {
-  const stabilized = (1 - UPGRADES.stabilizers.perLevel) ** state.levels.stabilizers;
-  return DENSITY_GROWTH ** (band - 1) * stabilized;
+export function density(_state: GameState, band: number): number {
+  return DENSITY_GROWTH ** (band - 1);
 }
 
 /** Collisions per second, after the off-band energy penalty. */
@@ -139,9 +90,7 @@ export function rareChance(state: GameState, band: number): number {
   if (!state.rares.includes(rareId)) return 0; // not researched yet
   const rare = PARTICLES[rareId].rare!; // `!` = "not undefined here"; every rare has this field
   return (
-    rare.baseChance *
-    (1 + UPGRADES.sensitivity.perLevel * state.levels.sensitivity) *
-    (1 + buffBonus(state, 'rareChance'))
+    rare.baseChance * resolve(state, 'rareChance')
   );
 }
 

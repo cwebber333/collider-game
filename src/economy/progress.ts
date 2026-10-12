@@ -2,6 +2,7 @@
 import { OFFLINE_CAP_SECONDS } from '../data/constants';
 import type { FeatureId } from '../data/features';
 import { THRESHOLDS, type BonusKind, type ThresholdDef } from '../data/thresholds';
+import { resonatorBonus } from './resonators';
 import type { GameState } from './state';
 
 export function breachedThresholds(state: GameState): readonly ThresholdDef[] {
@@ -30,5 +31,5 @@ export function thresholdBonus(state: GameState, bonus: BonusKind): number {
 
 /** Longest time away that still counts for offline progress. */
 export function offlineCap(state: GameState): number {
-  return OFFLINE_CAP_SECONDS + thresholdBonus(state, 'offlineCap');
+  return OFFLINE_CAP_SECONDS + thresholdBonus(state, 'offlineCap') + resonatorBonus(state, 'offlineCap');
 }

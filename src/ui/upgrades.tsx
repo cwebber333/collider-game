@@ -1,28 +1,30 @@
-// Upgrade lists: the collider's own upgrades and, after T2, the Wellspring.
+// Upgrade lists: the collider's own upgrades and the Wellspring.
 import { StyleSheet, Text, View } from 'react-native';
-import { PARTICLES, type ParticleId } from '../data/particles';
 import { UPGRADES, type UpgradeId } from '../data/upgrades';
 import {
+  basePower,
   canAfford,
+  chargeRate,
+  conduitStrength,
   energy,
   isMaxed,
   isUnlocked,
   stableBand,
   thresholdFor,
   upgradeCost,
-  wellspringPowerMult,
   type Action,
   type GameState,
 } from '../economy';
 import { Button, Card } from './common';
-import { formatCost, formatRate } from './format';
+import { CostLines } from './cost';
+import { formatAmount, formatRate } from './format';
 import { colors, mono, space } from './theme';
 
 /** `freeBuys`: dev mode where purchases cost nothing. */
 type Props = { state: GameState; dispatch: (action: Action) => void; freeBuys?: boolean };
 
-const COLLIDER: UpgradeId[] = ['ringSpeed', 'beamCurrent', 'collectorGrid', 'sensitivity'];
-const WELLSPRING: UpgradeId[] = ['conduits', 'stabilizers'];
+const COLLIDER: UpgradeId[] = ['beamCurrent', 'collectorGrid', 'ringSpeed', 'sensitivity'];
+const WELLSPRING: UpgradeId[] = ['conduits', 'coils', 'taps'];
 
 /** One line describing what the upgrade does for you right now. */
 function currentEffect(state: GameState, id: UpgradeId): string {
@@ -38,9 +40,11 @@ function currentEffect(state: GameState, id: UpgradeId): string {
     case 'sensitivity':
       return `Rare chance +${Math.round(per * level * 100)}%`;
     case 'conduits':
-      return `Power ×${formatRate(wellspringPowerMult(state))}`;
-    case 'stabilizers':
-      return `Density −${Math.round((1 - (1 - per) ** level) * 100)}%`;
+      return `Base Power ${formatRate(basePower(state))}`;
+    case 'taps':
+      return `Charge ×${formatRate(per ** level)}`;
+    case 'coils':
+      return `Each Conduit +${formatRate(conduitStrength(state))} base Power`;
   }
 }
 
@@ -68,12 +72,7 @@ function UpgradeRow({ state, dispatch, freeBuys, id }: Props & { id: UpgradeId }
       {/* Cost sits right under the button that pays it. */}
       <View style={styles.buy}>
         <Button label="Buy" small disabled={!affordable} onPress={() => dispatch({ type: 'buy', upgrade: id })} />
-        {cost &&
-          (Object.entries(cost) as [ParticleId, number][]).map(([pid, amount]) => (
-            <Text key={pid} style={[styles.cost, { color: state.particles[pid] >= amount ? colors.good : colors.bad }]}>
-              {PARTICLES[pid].symbol} {formatCost(amount)}
-            </Text>
-          ))}
+        {cost && <CostLines state={state} cost={cost} />}
       </View>
     </View>
   );
@@ -95,8 +94,12 @@ export function WellspringCard(props: Props) {
       </Card>
     );
   }
+  const { state } = props;
   return (
-    <Card title="Wellspring">
+    <Card title="Wellspring" right={<Text style={styles.charge}>⚡ {formatAmount(state.charge)}</Text>}>
+      <Text style={styles.description}>
+        Charge gathers on its own: +{formatRate(chargeRate(state))}/s. Nobody knows where it comes from.
+      </Text>
       {WELLSPRING.map((id) => <UpgradeRow key={id} id={id} {...props} />)}
     </Card>
   );
@@ -117,7 +120,7 @@ const styles = StyleSheet.create({
   effect: { color: colors.accent, fontSize: 13 },
   description: { color: colors.muted, fontSize: 12 },
   buy: { alignItems: 'flex-end', gap: 2, minWidth: 84 },
-  cost: { fontFamily: mono, fontSize: 13 },
+  charge: { color: colors.warn, fontFamily: mono, fontSize: 14, fontWeight: '700' },
   reason: { color: colors.warn, fontSize: 12, marginTop: 2 },
   tease: { color: colors.muted, fontSize: 13, fontStyle: 'italic' },
 });

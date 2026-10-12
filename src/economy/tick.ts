@@ -2,9 +2,10 @@
 // catch-up use the same function, so they always produce the same result.
 import { MAX_TICK_SECONDS } from '../data/constants';
 import { PARTICLE_IDS } from '../data/particles';
+import { fillBoard } from './actions';
 import { offlineCap } from './progress';
 import type { GameState } from './state';
-import { productionRates } from './stats';
+import { chargeRate, productionRates } from './stats';
 
 export function advance(state: GameState, seconds: number): GameState {
   if (!(seconds > 0)) return state;
@@ -16,7 +17,8 @@ export function advance(state: GameState, seconds: number): GameState {
     current = step(current, dt);
     remaining -= dt;
   }
-  return current;
+  // Saves from before Experiments existed may need their board filled.
+  return current.experiments.requests.length === 0 ? fillBoard(current) : current;
 }
 
 /** Progress while the app was closed, capped at the offline limit. */
@@ -35,5 +37,6 @@ function step(state: GameState, dt: number): GameState {
       lifetime[id] += gained;
     }
   }
-  return { ...state, particles, lifetime, elapsed: state.elapsed + dt };
+  const charge = state.charge + chargeRate(state) * dt;
+  return { ...state, particles, lifetime, charge, elapsed: state.elapsed + dt };
 }

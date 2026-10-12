@@ -46,6 +46,6 @@ export function formatDuration(seconds: number): string {
   const h = Math.floor(s / 3600);
   const m = Math.floor((s % 3600) / 60);
   if (h > 0) return `${h}h ${m}m`;
-  if (m > 0) return `${m}m ${s % 60}s`;
+  if (m > 0) return s % 60 ? `${m}m ${s % 60}s` : `${m}m`;
   return `${s}s`;
 }

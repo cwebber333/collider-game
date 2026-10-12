@@ -24,6 +24,8 @@ function buffText(kind: BuffKind, perLevel: number): string {
 
 export function IndexCard({ state }: { state: GameState }) {
   const [open, setOpen] = useState(false);
+  // Hidden until its Threshold, though lifetime totals (and so Index levels) count from the start.
+  if (!indexBuffsActive(state)) return null;
   const found = PARTICLE_IDS.filter((id) => state.lifetime[id] > 0);
   return (
     <Card
@@ -38,7 +40,6 @@ export function IndexCard({ state }: { state: GameState }) {
     >
       {open && (
         <>
-          {!indexBuffsActive(state) && <Text style={styles.note}>Index buffs switch on after T1.</Text>}
           {found.map((id) => {
             const p = PARTICLES[id];
             const { level, collected, next } = indexProgress(state, id);

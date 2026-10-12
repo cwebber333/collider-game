@@ -17,7 +17,7 @@ Particle physics is the *flavor*, not a simulation. The question that drives the
 
 ## 2. Design pillars
 
-1. **Everything feeds everything.** Each system is its own small game whose rewards boost *other* systems.
+1. **Everything feeds everything.** Each system is its own small game whose rewards boost *other* systems. See the [Cross-Link Map](cross-link-map.md).
 2. **Always something to do.** Several currencies and upgrade sinks, so every session has something affordable.
 3. **Smooth climb, no walls.** When one path slows down, another opens up.
 4. **Respect the player's time.** No ads. No penalties for being away. Events come back. Active play speeds you up; idle play never loses ground.
@@ -98,7 +98,7 @@ Names are placeholders and deliberately not taken from the inspiration games.
 | System | Mechanic inspired by | Plays like | Feeds into |
 |---|---|---|---|
 | **The Collider** (core) | IOM mining floors | Choose a speed band, farm its particles | Everything |
-| **The Wellspring** (power source) | CIFI production chains | The Ring draws power from *something* beneath it. Dig conduits deeper and build capacitors. Nobody knows what it's drawing from | Collider **Power** |
+| **The Wellspring** (power source) | CIFI production chains | The Ring draws power from *something* beneath it. It makes its own resource, **Charge**, spent on Conduits (base Power); Taps raise the Charge rate and Coils make each Conduit stronger. Later systems add new Wellspring mechanics. Nobody knows what it's drawing from | Collider **Power** |
 | **Detector Array** | IOM upgrade trees | Build and tune detector modules. Each one is better at certain particle families | Collider **detection** |
 | **Particle Index** | IOM stars/cards | Collection: each particle gives one specific buff and can be leveled | One specific system per particle |
 | **Ring Schematics** (prestige tree) | CIFI mod tree | Big branching tree; some nodes unlock mechanics | Global multipliers + unlocks |
@@ -140,6 +140,23 @@ Self-contained side modes that rotate, for example one active at a time for abou
   - **Bleed-through:** something leaks in from beyond a Threshold. A burst mode: catch as much as you can before it fades. Every catch counts; nothing is lost.
   - **Signal:** a repeating pattern in the data. A decode puzzle with a small upgrade tree of its own.
   - **Ghost Ring:** a second, mirrored collider appears for a while. A mini-run with simplified rules.
+
+## 7b. Resonators vs. Ring Schematics (design rule)
+
+Both are permanent (kept through Recalibrate), so they need clearly different jobs. **Resonators give numbers; Schematics give abilities and choices.**
+
+| | Resonators | Ring Schematics |
+|---|---|---|
+| Paid with | **Rares**, farmed during play from specific bands | **Resonance**, earned only by Recalibrating (more from a higher peak Power) |
+| Shape | One simple line per rare: level 1, 2, 3… | A large branching tree (like CIFI's Loop Mods); you choose a path |
+| Kind of reward | Steady numeric boosts: +Yield, +Power, +offline cap, +Wellspring output, Index requirement, +Resonance | **New abilities and rule changes**: automation (Band Cycle, Auto-Buy, Auto-Research), head starts (begin runs further along), new mechanics; plus a **few** rare, big multipliers |
+| What it makes you do | Go back to older bands to hunt rares | Plan runs and decide when to Recalibrate |
+| Pace | Something to buy most sessions | A few meaningful choices per Recalibrate |
+
+**Rules when designing Schematics nodes:**
+- Don't add small per-level "+X%" nodes for anything a Resonator already boosts. If a node is a number, it should be a big, rare one (e.g. ×2 Power) that's a real choice against an ability node.
+- Prefer nodes that change *how* you play: what's automated, where a run starts, what rares or bands do, how other systems interact.
+- If Resonators need more depth later, add IOM-style tiers (a second effect at a higher tier) rather than borrowing Schematics-style abilities.
 
 ## 8. Prestige layers (draft)
 

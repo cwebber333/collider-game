@@ -6,7 +6,7 @@
 // particles switch (usually one older + one newer), which keeps old
 // bands useful and makes the player move the dial.
 import type { FeatureId } from './features';
-import type { ParticleId } from './particles';
+import type { Resource } from './resources';
 
 export const UPGRADE_IDS = [
   'beamCurrent',
@@ -14,7 +14,8 @@ export const UPGRADE_IDS = [
   'sensitivity',
   'ringSpeed',
   'conduits',
-  'stabilizers',
+  'taps',
+  'coils',
 ] as const;
 
 export type UpgradeId = (typeof UPGRADE_IDS)[number];
@@ -23,7 +24,8 @@ export interface CostTier {
   /** First current level this tier applies to. */
   fromLevel: number;
   growth: number;
-  costs: { particle: ParticleId; base: number }[];
+  /** `particle` can also be 'charge' (the Wellspring's own resource). */
+  costs: { particle: Resource; base: number }[];
 }
 
 export interface UpgradeDef {
@@ -108,26 +110,38 @@ export const UPGRADES: Record<UpgradeId, UpgradeDef> = {
     ],
   },
   // Wellspring (unlocked by a Threshold; see thresholds.ts). Resets on Recalibrate.
+  // Conduits add base Power: added before every multiplier, so the first
+  // levels nearly double Power and later ones matter less and less.
   conduits: {
     id: 'conduits',
     name: 'Conduits',
-    description: '×1.15 Power per level',
-    perLevel: 1.15,
+    description: '+0.25 base Power per level, paid in Charge',
+    perLevel: 0.25,
+    unlockedBy: 'wellspring',
+    costTiers: [{ fromLevel: 0, growth: 2.2, costs: [{ particle: 'charge', base: 100 }] }],
+  },
+  taps: {
+    id: 'taps',
+    name: 'Taps',
+    description: '×1.2 Charge per level',
+    perLevel: 1.2,
     unlockedBy: 'wellspring',
     costTiers: [
-      { fromLevel: 0, growth: 2.2, costs: [{ particle: 'bmeson', base: 560_000 }, { particle: 'zboson', base: 410_000 }] },
-      { fromLevel: 10, growth: 2.2, costs: [{ particle: 'zboson', base: 1_100_000_000 }, { particle: 'higgs', base: 950_000_000 }] },
+      { fromLevel: 0, growth: 2, costs: [{ particle: 'pion', base: 50_000 }, { particle: 'kaon', base: 25_000 }] },
+      { fromLevel: 10, growth: 2, costs: [{ particle: 'tau', base: 5_000_000 }, { particle: 'psi', base: 3_000_000 }] },
     ],
   },
-  stabilizers: {
-    id: 'stabilizers',
-    name: 'Stabilizers',
-    description: '−4% band density per level',
-    perLevel: 0.04,
+  // Coils make every Conduit stronger, so they matter more as Conduits get
+  // expensive: Conduits carry the Charge, Coils step it up.
+  coils: {
+    id: 'coils',
+    name: 'Coils',
+    description: 'Each Conduit gives +15% more base Power per level',
+    perLevel: 0.15,
     unlockedBy: 'wellspring',
     costTiers: [
-      { fromLevel: 0, growth: 2, costs: [{ particle: 'kaon', base: 380_000 }, { particle: 'tau', base: 270_000 }] },
-      { fromLevel: 10, growth: 2, costs: [{ particle: 'tau', base: 270_000_000 }, { particle: 'psi', base: 200_000_000 }] },
+      { fromLevel: 0, growth: 3, costs: [{ particle: 'kaon', base: 200_000 }, { particle: 'tau', base: 120_000 }] },
+      { fromLevel: 8, growth: 3, costs: [{ particle: 'tau', base: 1_300_000_000 }, { particle: 'psi', base: 800_000_000 }] },
     ],
   },
 };

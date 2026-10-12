@@ -42,6 +42,8 @@ export async function deleteSave(): Promise<void> {
 /** Fills in fields added since the save was written, so old saves keep loading. */
 function upgradeSave(saved: Partial<GameState>): GameState {
   renameParticle(saved, 'jpsi', 'psi'); // renamed 2026-10-11
+  // Stabilizers were replaced by Coils (2026-10-11); drop the old level.
+  if (saved.levels) delete (saved.levels as Record<string, number>).stabilizers;
   const fresh = newGame();
   return {
     ...fresh,

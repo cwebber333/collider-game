@@ -4,16 +4,21 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 import { continueAutoPlay, startAutoPlay, type AutoPlayGoal } from '../bot/autoplay';
 import type { Target } from '../bot/bot';
-import { PARTICLE_IDS, type ParticleId } from '../data/particles';
+import { PARTICLE_IDS } from '../data/particles';
 import {
   advance,
   advanceOffline,
   apply,
+  costEntries,
+  dataUpgradeCost,
   offlineCap,
+  requestCost,
   researchCost,
+  resonatorCost,
   upgradeCost,
   zeroParticles,
   type Action,
+  type Cost,
   type GameState,
   type ParticleAmounts,
 } from '../economy';
@@ -41,17 +46,44 @@ export interface AutoPlayStatus {
   gaveUp: boolean;
 }
 
-/** Applies a buy or research without spending anything (dev "free buys" mode). */
+/** What an action costs in particles or Charge, if anything. */
+function actionCost(state: GameState, action: Action): Cost | null {
+  switch (action.type) {
+    case 'buy':
+      return upgradeCost(state, action.upgrade);
+    case 'research':
+      return researchCost(state);
+    case 'buildResonator':
+      return resonatorCost(state, action.rare);
+    case 'completeExperiment': {
+      const request = state.experiments.requests[action.index];
+      return request ? requestCost(state, request) : null;
+    }
+    default:
+      return null;
+  }
+}
+
+/** Applies an action without spending anything (dev "free buys" mode). */
 function applyFree(state: GameState, action: Action): GameState {
-  const cost = action.type === 'buy' ? upgradeCost(state, action.upgrade) : action.type === 'research' ? researchCost(state) : null;
+  if (action.type === 'buyDataUpgrade') {
+    // Data upgrades cost Data: top it up, buy, then put Data back.
+    const cost = dataUpgradeCost(state, action.upgrade) ?? 0;
+    const flush = { ...state, experiments: { ...state.experiments, data: Math.max(state.experiments.data, cost) } };
+    const done = apply(flush, action);
+    return done === flush ? state : { ...done, experiments: { ...done.experiments, data: state.experiments.data } };
+  }
+  const cost = actionCost(state, action);
   if (!cost) return apply(state, action);
   // Top up whatever's missing, apply, then put the balances back as they were.
   const particles = { ...state.particles };
-  for (const [id, amount] of Object.entries(cost) as [ParticleId, number][]) {
-    particles[id] = Math.max(particles[id], amount);
+  let charge = state.charge;
+  for (const [r, amount] of costEntries(cost)) {
+    if (r === 'charge') charge = Math.max(charge, amount);
+    else particles[r] = Math.max(particles[r], amount);
   }
-  const done = apply({ ...state, particles }, action);
-  return done === state ? state : { ...done, particles: state.particles };
+  const done = apply({ ...state, particles, charge }, action);
+  return done === state ? state : { ...done, particles: state.particles, charge: state.charge };
 }
 
 function awayReport(before: GameState, after: GameState, seconds: number): AwayReport {

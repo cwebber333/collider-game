@@ -10,9 +10,32 @@ import { PARTICLES, PARTICLE_IDS, type ParticleId } from '../data/particles';
 import { RARE_CHAIN, type RareResearchDef } from '../data/rares';
 import { THRESHOLDS, type ThresholdDef } from '../data/thresholds';
 import { UPGRADES, type UpgradeId } from '../data/upgrades';
+import {
+  BOARD_SIZE,
+  CHARGE_REQUEST_CHANCE,
+  RARE_REWARD_CHANCE,
+  REQUEST_GROWTH,
+  REQUEST_PARTICLE_POOL,
+  REQUEST_SECONDS,
+  SKIP_COOLDOWN_SECONDS,
+  type DataUpgradeId,
+} from '../data/experiments';
+import {
+  dataLevel,
+  dataUpgradeCost,
+  newExperiments,
+  requestCost,
+  requestData,
+  type ExperimentRequest,
+} from './experiments';
 import { hasFeature } from './progress';
+import { nextRandom } from './random';
+import { canAfford, spend, type Cost } from './resources';
+import { resonatorDef, resonatorLevel } from './resonators';
 import { newGame, type GameState } from './state';
-import { bandCap, buffBonus, buffReduction, power } from './stats';
+import { buffReduction } from './particleIndex';
+import { bandCap, chargeRate, power, productionRates } from './stats';
+import { resolve } from './statLayer';
 
 /**
  * A "discriminated union": each action is an object whose `type` field says
@@ -24,9 +47,12 @@ export type Action =
   | { type: 'selectBand'; band: number }
   | { type: 'breach' }
   | { type: 'research' }
+  | { type: 'buildResonator'; rare: ParticleId }
+  | { type: 'completeExperiment'; index: number }
+  | { type: 'skipExperiment'; index: number }
+  | { type: 'buyDataUpgrade'; upgrade: DataUpgradeId }
   | { type: 'recalibrate' };
 
-export type Cost = Partial<Record<ParticleId, number>>;
 
 // ---------- Upgrades ----------
 
@@ -59,12 +85,6 @@ export function upgradeCost(state: GameState, id: UpgradeId): Cost | null {
   return cost;
 }
 
-export function canAfford(state: GameState, cost: Cost): boolean {
-  return (Object.entries(cost) as [ParticleId, number][]).every(
-    ([id, amount]) => state.particles[id] >= amount,
-  );
-}
-
 export function canBuy(state: GameState, id: UpgradeId): boolean {
   const cost = upgradeCost(state, id);
   return cost !== null && canAfford(state, cost);
@@ -74,16 +94,9 @@ function buy(state: GameState, id: UpgradeId): GameState {
   const cost = upgradeCost(state, id);
   if (!cost || !canAfford(state, cost)) return state;
 
+  const paid = spend(state, cost);
   // `{ ...x }` copies a dict (shallow), like dict(x) in Python.
-  const particles = { ...state.particles };
-  for (const [pid, amount] of Object.entries(cost) as [ParticleId, number][]) {
-    particles[pid] -= amount;
-  }
-  const next: GameState = {
-    ...state,
-    particles,
-    levels: { ...state.levels, [id]: state.levels[id] + 1 },
-  };
+  const next: GameState = { ...paid, levels: { ...paid.levels, [id]: paid.levels[id] + 1 } };
   next.peakPower = Math.max(next.peakPower, power(next));
   return next;
 }
@@ -110,9 +123,150 @@ function research(state: GameState): GameState {
   const cost = researchCost(state);
   const next = nextResearch(state);
   if (!cost || !next || !canAfford(state, cost)) return state;
-  const particles = { ...state.particles };
-  for (const [pid, amount] of Object.entries(cost) as [ParticleId, number][]) particles[pid] -= amount;
-  return { ...state, particles, rares: [...state.rares, next.rare] };
+  return { ...spend(state, cost), rares: [...state.rares, next.rare] };
+}
+
+// ---------- Resonators ----------
+
+/** A Resonator can be built once its Threshold unlocks it and its rare is researched. */
+export function isResonatorUnlocked(state: GameState, rare: ParticleId): boolean {
+  const def = resonatorDef(rare);
+  return def !== undefined && hasFeature(state, def.unlockedBy) && state.rares.includes(rare);
+}
+
+/** Cost of the next Resonator level, or null if locked or maxed. */
+export function resonatorCost(state: GameState, rare: ParticleId): Cost | null {
+  const def = resonatorDef(rare);
+  if (!def || !isResonatorUnlocked(state, rare)) return null;
+  const level = resonatorLevel(state, rare);
+  if (def.maxLevel !== undefined && level >= def.maxLevel) return null;
+  const scale = def.cost.growth ** level;
+  return {
+    [rare]: Math.ceil(def.cost.rare * scale),
+    [def.cost.particle]: Math.ceil(def.cost.particleBase * scale),
+  };
+}
+
+function buildResonator(state: GameState, rare: ParticleId): GameState {
+  const cost = resonatorCost(state, rare);
+  if (!cost || !canAfford(state, cost)) return state;
+  const paid = spend(state, cost);
+  const next: GameState = { ...paid, resonators: { ...paid.resonators, [rare]: resonatorLevel(state, rare) + 1 } };
+  next.peakPower = Math.max(next.peakPower, power(next));
+  return next;
+}
+
+// ---------- Experiments ----------
+
+/** Best production rate of a particle across the bands you can dial. */
+function bestRate(state: GameState, id: ParticleId): number {
+  let best = 0;
+  for (let band = 1; band <= bandCap(state); band++) best = Math.max(best, productionRates(state, band)[id]);
+  return best;
+}
+
+/** 2 significant figures, so requests read cleanly. */
+function niceAmount(n: number): number {
+  if (n < 100) return Math.max(1, Math.round(n));
+  const scale = 10 ** (Math.floor(Math.log10(n)) - 1);
+  return Math.round(n / scale) * scale;
+}
+
+/** Adds one request for 1–2 of your most advanced discovered common particles. */
+function addRequest(state: GameState): GameState {
+  const pool = PARTICLE_IDS.filter((id) => !PARTICLES[id].rare && state.lifetime[id] > 0 && bestRate(state, id) > 0).slice(
+    -REQUEST_PARTICLE_POOL,
+  );
+  if (pool.length === 0) return state;
+  let seed = state.experiments.seed;
+  let roll: number;
+  [roll, seed] = nextRandom(seed);
+  const kinds = pool.length > 1 && roll < 0.5 ? 2 : 1;
+  const picked: ParticleId[] = [];
+  while (picked.length < kinds) {
+    [roll, seed] = nextRandom(seed);
+    const id = pool[Math.floor(roll * pool.length)];
+    if (!picked.includes(id)) picked.push(id);
+  }
+  const scale = REQUEST_SECONDS * REQUEST_GROWTH ** state.experiments.completed;
+  const request: ExperimentRequest = { base: {} };
+  for (const id of picked) request.base[id] = niceAmount(bestRate(state, id) * scale);
+  // Cross-links: some requests also want Wellspring Charge, and some pay a rare.
+  [roll, seed] = nextRandom(seed);
+  if (chargeRate(state) > 0 && roll < CHARGE_REQUEST_CHANCE) request.base.charge = niceAmount(chargeRate(state) * scale);
+  [roll, seed] = nextRandom(seed);
+  if (roll < RARE_REWARD_CHANCE) {
+    [roll, seed] = nextRandom(seed);
+    const rare = state.rares[Math.floor(roll * state.rares.length)];
+    const amount = Math.max(1, niceAmount(bestRate(state, rare) * REQUEST_SECONDS));
+    request.rareReward = { rare, amount };
+  }
+  return { ...state, experiments: { ...state.experiments, seed, requests: [...state.experiments.requests, request] } };
+}
+
+/** Tops the board up to its full size (once Experiments are unlocked). */
+export function fillBoard(state: GameState): GameState {
+  if (!hasFeature(state, 'experiments')) return state;
+  let s = state;
+  while (s.experiments.requests.length < BOARD_SIZE) {
+    const next = addRequest(s);
+    if (next === s) break;
+    s = next;
+  }
+  return s;
+}
+
+export function canCompleteExperiment(state: GameState, index: number): boolean {
+  const request = state.experiments.requests[index];
+  return request !== undefined && canAfford(state, requestCost(state, request));
+}
+
+function completeExperiment(state: GameState, index: number): GameState {
+  if (!canCompleteExperiment(state, index)) return state;
+  const request = state.experiments.requests[index];
+  let paid = spend(state, requestCost(state, request));
+  if (request.rareReward) {
+    const { rare, amount } = request.rareReward;
+    paid = {
+      ...paid,
+      particles: { ...paid.particles, [rare]: paid.particles[rare] + amount },
+      lifetime: { ...paid.lifetime, [rare]: paid.lifetime[rare] + amount },
+    };
+  }
+  const experiments = {
+    ...paid.experiments,
+    data: paid.experiments.data + requestData(state, request),
+    completed: paid.experiments.completed + 1,
+    requests: paid.experiments.requests.filter((_, i) => i !== index),
+  };
+  return fillBoard({ ...paid, experiments });
+}
+
+export function canSkipExperiment(state: GameState): boolean {
+  return state.elapsed >= state.experiments.nextSkipAt;
+}
+
+function skipExperiment(state: GameState, index: number): GameState {
+  if (!canSkipExperiment(state) || !state.experiments.requests[index]) return state;
+  const experiments = {
+    ...state.experiments,
+    requests: state.experiments.requests.filter((_, i) => i !== index),
+    nextSkipAt: state.elapsed + SKIP_COOLDOWN_SECONDS,
+  };
+  return fillBoard({ ...state, experiments });
+}
+
+function buyDataUpgrade(state: GameState, id: DataUpgradeId): GameState {
+  const cost = dataUpgradeCost(state, id);
+  if (!hasFeature(state, 'experiments') || cost === null || state.experiments.data < cost) return state;
+  const experiments = {
+    ...state.experiments,
+    data: state.experiments.data - cost,
+    levels: { ...state.experiments.levels, [id]: dataLevel(state, id) + 1 },
+  };
+  const next: GameState = { ...state, experiments };
+  next.peakPower = Math.max(next.peakPower, power(next));
+  return next;
 }
 
 // ---------- Thresholds ----------
@@ -135,7 +289,7 @@ export function canBreach(state: GameState): boolean {
 function breach(state: GameState): GameState {
   const t = nextThreshold(state);
   if (!t || !canBreach(state)) return state;
-  return { ...state, breached: state.breached + 1, crystals: state.crystals + t.crystals };
+  return fillBoard({ ...state, breached: state.breached + 1, crystals: state.crystals + t.crystals });
 }
 
 // ---------- Recalibrate ----------
@@ -148,13 +302,13 @@ export function canRecalibrate(state: GameState): boolean {
 export function resonanceGain(state: GameState): number {
   if (!canRecalibrate(state)) return 0;
   const base = RESONANCE_SCALE * (state.peakPower / RESONANCE_POWER) ** RESONANCE_EXPONENT;
-  return Math.floor(base * (1 + buffBonus(state, 'resonance')));
+  return Math.floor(base * resolve(state, 'resonance'));
 }
 
 /**
- * Resets particles and all upgrades (Wellspring too). Keeps the Index,
- * Thresholds, Crystals, and rares (both which are known and their balances,
- * like IOM's veins).
+ * Resets particles, all upgrades (Wellspring too) and Experiments. Keeps the Index,
+ * Thresholds, Crystals, Resonators, and rares (both which are known and their
+ * balances, like IOM's veins).
  */
 function recalibrate(state: GameState): GameState {
   if (!canRecalibrate(state)) return state;
@@ -165,6 +319,8 @@ function recalibrate(state: GameState): GameState {
     ...fresh,
     particles,
     rares: state.rares,
+    resonators: state.resonators,
+    experiments: newExperiments(state.experiments.seed),
     lifetime: state.lifetime,
     breached: state.breached,
     crystals: state.crystals,
@@ -173,7 +329,7 @@ function recalibrate(state: GameState): GameState {
     elapsed: state.elapsed,
   };
   next.peakPower = power(next);
-  return next;
+  return fillBoard(next);
 }
 
 // ---------- Dispatcher ----------
@@ -190,6 +346,14 @@ export function apply(state: GameState, action: Action): GameState {
       return breach(state);
     case 'research':
       return research(state);
+    case 'buildResonator':
+      return buildResonator(state, action.rare);
+    case 'completeExperiment':
+      return completeExperiment(state, action.index);
+    case 'skipExperiment':
+      return skipExperiment(state, action.index);
+    case 'buyDataUpgrade':
+      return buyDataUpgrade(state, action.upgrade);
     case 'recalibrate':
       return recalibrate(state);
   }

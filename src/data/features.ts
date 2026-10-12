@@ -28,15 +28,15 @@ export interface FeatureDef {
 export const FEATURES: Record<FeatureId, FeatureDef> = {
   indexBuffs: { name: 'Particle Index buffs', description: 'Each particle in the Index buffs one thing', built: true },
   rareResearch: { name: 'Rare Research', description: 'Unlock new rare particles, one band pair at a time', built: true },
-  resonators: { name: 'Resonators', description: 'Spend rares on permanent upgrades across systems', built: false },
-  wellspring: { name: 'Wellspring', description: 'Conduits (Power) and Stabilizers (density)', built: true },
-  experiments: { name: 'Experiments', description: 'Deliver particles to requests for Data upgrades', built: false },
+  resonators: { name: 'Resonators', description: 'Spend rares on permanent upgrades across systems', built: true },
+  wellspring: { name: 'Wellspring', description: 'Charge, Conduits (base Power), Taps and Coils', built: true },
+  experiments: { name: 'Experiments', description: 'Deliver particles to requests for Data upgrades', built: true },
   trials: { name: 'Trials', description: 'Restricted runs with permanent rewards', built: false },
   capacitors: { name: 'Wellspring: Capacitors', description: 'A third Wellspring upgrade line', built: false },
   // Recalibrate works now; the Ring Schematics tree it feeds comes next.
   recalibrate: { name: 'Recalibrate (Ring Schematics soon)', description: 'Prestige for Resonance and the Schematics tree', built: true },
   schematicsSpiral: { name: 'Schematics: Spiral branch', description: 'Automation: Band Cycle, Auto-Buy', built: false },
-  resonatorLines2: { name: 'Resonators: more lines', description: 'Lines for Pentaquarks, Glueballs and Gravitons', built: false },
+  resonatorLines2: { name: 'Resonators: more lines', description: 'Lines for Pentaquarks, Glueballs and Gravitons', built: true },
   experimentsTier2: { name: 'Experiments: tier 2', description: 'Bigger requests and upgrades', built: false },
   secondRing: { name: 'The Second Ring', description: 'Build the connection to the next ring out', built: false },
 };

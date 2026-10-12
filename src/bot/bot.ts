@@ -6,32 +6,58 @@
 //   3. sets the Ring to the band that reaches the goal soonest.
 import {
   apply,
+  balance,
   canAfford,
   canBreach,
   bandCap,
+  chargeRate,
+  costEntries,
+  dataUpgradeCost,
+  requestCost,
   productionRates,
   researchCost,
+  resonatorCost,
+  resonatorLevel,
   upgradeCost,
   type Cost,
   type GameState,
 } from '../economy';
+import type { DataUpgradeId } from '../data/experiments';
 import type { ParticleId } from '../data/particles';
+import type { Resource } from '../data/resources';
+import { RESONATORS } from '../data/resonators';
 import { UPGRADE_IDS, type UpgradeId } from '../data/upgrades';
 
-/** Something the bot can spend on: an upgrade, or the next Rare Research. */
-export type Target = UpgradeId | 'research';
+/** A Resonator, written as "resonator:<rare>" (a template literal type: a string with a fixed shape). */
+export type ResonatorTarget = `resonator:${ParticleId}`;
+/** Something the bot can spend on: an upgrade, the next Rare Research, or a Resonator. */
+export type Target = UpgradeId | 'research' | ResonatorTarget;
 
-const ALL_TARGETS: readonly Target[] = [...UPGRADE_IDS, 'research'];
+const resonator = (rare: ParticleId): ResonatorTarget => `resonator:${rare}`;
+const RESONATOR_TARGETS = RESONATORS.map((r) => resonator(r.rare));
+/** Resonators that raise output, so the bot treats them like production upgrades. */
+const PRODUCTION_RESONATORS = RESONATORS.filter((r) => ['yield', 'power', 'wellspring'].includes(r.effect)).map((r) =>
+  resonator(r.rare),
+);
+
+const ALL_TARGETS: readonly Target[] = [...UPGRADE_IDS, 'research', ...RESONATOR_TARGETS];
 
 const BUY_PRIORITY: Target[] = [
   'ringSpeed',
   'beamCurrent',
   'conduits',
-  'stabilizers',
+  'taps',
+  'coils',
+  ...PRODUCTION_RESONATORS,
   'collectorGrid',
   'research',
   'sensitivity',
+  ...RESONATOR_TARGETS.filter((t) => !PRODUCTION_RESONATORS.includes(t)),
 ];
+
+function resonatorRare(target: Target): ParticleId | null {
+  return target.startsWith('resonator:') ? (target.slice('resonator:'.length) as ParticleId) : null;
+}
 
 export interface Plan {
   target: Target;
@@ -40,27 +66,48 @@ export interface Plan {
 }
 
 function targetCost(state: GameState, target: Target): Cost | null {
-  return target === 'research' ? researchCost(state) : upgradeCost(state, target);
+  if (target === 'research') return researchCost(state);
+  const rare = resonatorRare(target);
+  return rare ? resonatorCost(state, rare) : upgradeCost(state, target as UpgradeId);
 }
 
 function buyTarget(state: GameState, target: Target): GameState {
-  return target === 'research' ? apply(state, { type: 'research' }) : apply(state, { type: 'buy', upgrade: target });
+  if (target === 'research') return apply(state, { type: 'research' });
+  const rare = resonatorRare(target);
+  if (rare) return apply(state, { type: 'buildResonator', rare });
+  return apply(state, { type: 'buy', upgrade: target as UpgradeId });
+}
+
+/** The state with one more level of `target` (for estimating its benefit). */
+function withOneMore(state: GameState, target: Target): GameState {
+  const rare = resonatorRare(target);
+  if (rare) return { ...state, resonators: { ...state.resonators, [rare]: resonatorLevel(state, rare) + 1 } };
+  if (target === 'research') return state;
+  const id = target as UpgradeId;
+  return { ...state, levels: { ...state.levels, [id]: state.levels[id] + 1 } };
+}
+
+/** Per-second income of every resource while farming `band` (Charge doesn't depend on the band). */
+function incomeAt(state: GameState, band: number): (r: Resource) => number {
+  const rates = productionRates(state, band);
+  const charge = chargeRate(state);
+  return (r) => (r === 'charge' ? charge : rates[r]);
 }
 
 /** Seconds until `cost` is affordable while farming `band` (Infinity if never). */
 export function timeToAfford(state: GameState, cost: Cost, band: number): number {
-  const rates = productionRates(state, band);
+  const income = incomeAt(state, band);
   let worst = 0;
-  for (const [id, amount] of Object.entries(cost) as [ParticleId, number][]) {
-    const missing = amount - state.particles[id];
+  for (const [r, amount] of costEntries(cost)) {
+    const missing = amount - balance(state, r);
     if (missing <= 0) continue;
-    worst = Math.max(worst, rates[id] > 0 ? missing / rates[id] : Infinity);
+    worst = Math.max(worst, income(r) > 0 ? missing / income(r) : Infinity);
   }
   return worst;
 }
 
 const POWER_UPGRADES: UpgradeId[] = ['beamCurrent', 'conduits'];
-const PRODUCTION_UPGRADES: UpgradeId[] = ['beamCurrent', 'conduits', 'collectorGrid', 'stabilizers'];
+const PRODUCTION_TARGETS: Target[] = ['beamCurrent', 'conduits', 'coils', 'collectorGrid', ...PRODUCTION_RESONATORS];
 /**
  * How many "next Ring Speed levels" a production upgrade is expected to keep
  * paying off for. Production upgrades are permanent for the run, so this is generous.
@@ -70,11 +117,10 @@ const PAYBACK_HORIZON = 4;
 const CURIOSITY_SHARE = 0.25;
 const CURIOSITIES: Target[] = ['research', 'sensitivity'];
 
-/** Factor by which one more level of `id` raises total output at `band`. */
-function speedup(state: GameState, id: UpgradeId, band: number): number {
+/** Factor by which one more level of `target` raises total output at `band`. */
+function speedup(state: GameState, target: Target, band: number): number {
   const total = (s: GameState) => Object.values(productionRates(s, band)).reduce((a, b) => a + b, 0);
-  const bumped = { ...state, levels: { ...state.levels, [id]: state.levels[id] + 1 } };
-  return total(bumped) / total(state);
+  return total(withOneMore(state, target)) / total(state);
 }
 
 /** The (target, band) pair among `candidates` that is affordable soonest. */
@@ -106,7 +152,7 @@ export function goalPlan(state: GameState): Plan | null {
   const main = mainPlan(state);
   if (!main) return bestPlan(state);
   let best = main;
-  for (const id of PRODUCTION_UPGRADES) {
+  for (const id of PRODUCTION_TARGETS) {
     if (id === main.target) continue;
     const plan = bestPlan(state, [id]);
     if (!plan) continue;
@@ -120,15 +166,37 @@ export function goalPlan(state: GameState): Plan | null {
   return best;
 }
 
+/** `cost` is affordable without spending what's reserved for the goal. */
+function affordableKeepingGoal(state: GameState, cost: Cost, goal: Plan | null): boolean {
+  if (!canAfford(state, cost)) return false;
+  const goalCost = (goal && targetCost(state, goal.target)) ?? {};
+  return costEntries(cost).every(([r, amount]) => balance(state, r) - amount >= (goalCost[r] ?? 0));
+}
+
 /** Affordable without spending particles reserved for the goal. */
 function canBuyKeepingGoal(state: GameState, target: Target, goal: Plan | null): boolean {
   const cost = targetCost(state, target);
-  if (!cost || !canAfford(state, cost)) return false;
-  if (!goal || goal.target === target) return true;
-  const goalCost = targetCost(state, goal.target) ?? {};
-  return (Object.entries(cost) as [ParticleId, number][]).every(
-    ([p, amount]) => state.particles[p] - amount >= (goalCost[p] ?? 0),
-  );
+  if (!cost) return false;
+  if (goal?.target === target) return canAfford(state, cost);
+  return affordableKeepingGoal(state, cost, goal);
+}
+
+/** Data upgrades in the order the bot buys them. */
+const DATA_PRIORITY: DataUpgradeId[] = ['diagnostics', 'grants', 'conduitStudies', 'assays', 'chargeStudies', 'protocols'];
+
+/** Completes one affordable experiment or buys one Data upgrade, if it can. */
+function doExperiments(state: GameState, goal: Plan | null): GameState {
+  const requests = state.experiments.requests;
+  for (let i = 0; i < requests.length; i++) {
+    if (affordableKeepingGoal(state, requestCost(state, requests[i]), goal)) {
+      return apply(state, { type: 'completeExperiment', index: i });
+    }
+  }
+  for (const id of DATA_PRIORITY) {
+    const cost = dataUpgradeCost(state, id);
+    if (cost !== null && state.experiments.data >= cost) return apply(state, { type: 'buyDataUpgrade', upgrade: id });
+  }
+  return state;
 }
 
 export interface CheckInOptions {
@@ -158,6 +226,12 @@ export function checkIn(state: GameState, { awaySeconds = 0, onBuy }: CheckInOpt
         break;
       }
     }
+    if (changed) continue;
+    const afterExperiments = doExperiments(s, goal);
+    if (afterExperiments !== s) {
+      s = afterExperiments;
+      changed = true;
+    }
   }
   const goal = goalPlan(s);
   if (!goal) return s;
@@ -167,10 +241,10 @@ export function checkIn(state: GameState, { awaySeconds = 0, onBuy }: CheckInOpt
 
 /** Share of `cost` (0–1) the player will have after farming `band` for `seconds`. */
 function coverage(state: GameState, cost: Cost, band: number, seconds: number): number {
-  const rates = productionRates(state, band);
+  const income = incomeAt(state, band);
   let share = 1;
-  for (const [id, amount] of Object.entries(cost) as [ParticleId, number][]) {
-    share = Math.min(share, (state.particles[id] + rates[id] * seconds) / amount);
+  for (const [r, amount] of costEntries(cost)) {
+    share = Math.min(share, (balance(state, r) + income(r) * seconds) / amount);
   }
   return share;
 }

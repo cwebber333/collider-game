@@ -14,6 +14,7 @@ import {
   stableBand,
   type Action,
   type GameState,
+  type StatId,
 } from '../economy';
 import { Card } from './common';
 import { formatAmount, formatPercent, formatRate } from './format';
@@ -26,20 +27,30 @@ export function rareRevealed(state: GameState, id: ParticleId): boolean {
   return state.rares.includes(id);
 }
 
-export function StatsHeader({ state }: { state: GameState }) {
-  const stats: [string, string][] = [
-    ['Power', formatRate(power(state))],
-    ['Yield', formatRate(particleYield(state))],
-    ['Energy', formatRate(energy(state))],
-    ['Collisions/s', formatRate(collisionsPerSecond(state, state.selectedBand))],
+/** Tap Power or Yield to see where it comes from (`onInspect`). */
+export function StatsHeader({ state, onInspect }: { state: GameState; onInspect: (stat: StatId) => void }) {
+  // [label, value, stat to inspect when tapped (if any)]
+  const stats: [string, string, StatId | null][] = [
+    ['Power', formatRate(power(state)), 'power'],
+    ['Yield', formatRate(particleYield(state)), 'yield'],
+    ['Energy', formatRate(energy(state)), null],
+    ['Collisions/s', formatRate(collisionsPerSecond(state, state.selectedBand)), null],
   ];
   return (
     <View style={styles.statsRow}>
-      {stats.map(([label, value]) => (
-        <View key={label} style={styles.stat}>
+      {stats.map(([label, value, stat]) => (
+        <Pressable
+          key={label}
+          disabled={!stat}
+          onPress={() => stat && onInspect(stat)}
+          style={({ pressed }) => [styles.stat, pressed && { opacity: 0.7 }]}
+        >
           <Text style={styles.statValue}>{value}</Text>
-          <Text style={styles.statLabel}>{label}</Text>
-        </View>
+          <Text style={styles.statLabel}>
+            {label}
+            {stat ? ' ⓘ' : ''}
+          </Text>
+        </Pressable>
       ))}
     </View>
   );

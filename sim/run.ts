@@ -65,6 +65,10 @@ function simulate(player: Player) {
   reportBands(run1.log);
   const rares = [...run1.log.raresAt.entries()].map(([id, t]) => `${id} ${fmt(t)}`).join(', ');
   console.log(`  Rares researched: ${rares || 'none'}`);
+  const resonators = Object.entries(run1.state.resonators).map(([id, lv]) => `${id} ${lv}`).join(', ');
+  console.log(`  Resonator levels at T10: ${resonators || 'none'}`);
+  const data = Object.entries(run1.state.experiments.levels).map(([id, lv]) => `${id} ${lv}`).join(', ');
+  console.log(`  Experiments done: ${run1.state.experiments.completed}; Data upgrades: ${data || 'none'}`);
   if (!canRecalibrate(run1.state)) return;
 
   const peak = run1.state.peakPower;

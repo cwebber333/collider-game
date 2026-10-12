@@ -95,7 +95,7 @@ The drift from real to theorized happens inside the rares too.
 | 2 | **Rare Research**: unlock the Antiproton and onward | Unlock | ~26 min |
 | 3 | **Resonators**: the first lines (spend Positrons and Antiprotons) | Unlock | ~1.1 h |
 | 4 | +10% Power | Bonus | ~3.0 h |
-| 5 | **Wellspring**: Conduits (Power) and Stabilizers (density) | Unlock | ~4.5 h |
+| 5 | **Wellspring**: Charge, Conduits (base Power), Taps and Coils | Unlock | ~4.5 h |
 | 6 | **Experiments**: the request board and Data upgrades | Unlock | ~6.9 h |
 | 7 | Offline cap +4 h | Bonus | ~10 h |
 | 8 | **Trials**: the first set | Unlock | ~16 h |
@@ -175,8 +175,8 @@ Connecting opens bands 37–48, the Outer Ring's first rare, and **The Archive**
 
 ## Notes and open questions
 
-- **Built so far (Inner Ring):** the Threshold track T1–T14 with Crystals, lore and rewards; all bands open from the start; Index buffs (T1), the +Power bonus (T4), Wellspring (T5), the offline-cap bonus (T7) and Recalibrate (T10) work. **Rare Research (T2)** works too: six Inner Ring rares, one per pair of bands, researched in order. The other rewards show as "coming soon". T1–T10 requirements are tuned to the timeline; T11–T14 are placeholders until Ring Schematics exist.
-- **Next to build:** Resonators (T3), then Experiments, Ring Schematics and Trials.
+- **Built so far (Inner Ring):** the Threshold track T1–T14 with Crystals, lore and rewards; all bands open from the start; Index buffs (T1), the +Power bonus (T4), Wellspring (T5), the offline-cap bonus (T7) and Recalibrate (T10) work. **Rare Research (T2)** works too: six Inner Ring rares, one per pair of bands, researched in order. **Resonators (T3, more lines at T12)** work: one per rare, kept through Recalibrate. **Experiments (T6)** work: a request board paying Data for Data upgrades. The other rewards show as "coming soon". T1–T10 requirements are tuned to the timeline; T11–T14 are placeholders until Ring Schematics exist.
+- **Next to build:** Ring Schematics (T10), then Trials.
 - **Not designed yet:** the detailed upgrade lines for Resonators, the Experiments request rules and Data tree, the first set of Trials, and each Ring's rares after the Inner Ring.
 - **Trials need a "second save slot"** for the restricted run, so the main run waits untouched. Worth checking how IOM's Challenges handle this on its wiki before designing.
 - **Crystals:** every Threshold grants some, like IOM's gems per Obelisk. Spent mainly in a special upgrades shop (like CIFI's), plus small required costs such as part of each Ring connection, always covered by free Crystals. Amounts per Threshold and the shop contents aren't designed yet.

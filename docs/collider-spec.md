@@ -66,6 +66,8 @@ All 12 Inner Ring bands are open from the start; Speed and Power decide how well
 
 ## 3. Production
 
+All multipliers below go through the **stat layer** (`src/economy/statLayer.ts`): bonuses from the same system add up, and systems multiply together (see the [Cross-Link Map](cross-link-map.md)). In game, tap Power or Yield to see the breakdown by system.
+
 ```
 collisions/sec   = Power ÷ density(selected band) × band efficiency (energy falloff, §2)
 particles/sec    = collisions/sec × Yield
@@ -115,9 +117,9 @@ Rares work like IOM's veins: one rare per pair of bands, unlocked one at a time 
 | **Positron** (antimatter electron) | 1–2 | 1 in 2,500 | Known from the start |
 | **Antiproton** (antimatter proton) | 3–4 | 1 in 2,000 | 2K electron, 1.5K muon, 25 Positron |
 | **Tetraquark** (four quarks, observed) | 5–6 | 1 in 4,000 | 25K pion, 12K kaon, 15 Antiproton |
-| **Pentaquark** (five quarks, confirmed 2015) | 7–8 | 1 in 8,000 | 250K tau, 120K psi, 15 Tetraquark |
-| **Glueball** (pure gluons, predicted) | 9–10 | 1 in 15,000 | 3M B meson, 1.5M Z boson, 15 Pentaquark |
-| **Graviton** (theorized, never observed) | 11–12 | 1 in 30,000 | 30M Z boson, 25M Higgs, 15 Glueball |
+| **Pentaquark** (five quarks, confirmed 2015) | 7–8 | 1 in 8,000 | 250K tau, 120K psi, 15 Tetraquark, 5K Charge |
+| **Glueball** (pure gluons, predicted) | 9–10 | 1 in 15,000 | 3M B meson, 1.5M Z boson, 15 Pentaquark, 60K Charge |
+| **Graviton** (theorized, never observed) | 11–12 | 1 in 30,000 | 30M Z boson, 25M Higgs, 15 Glueball, 500K Charge |
 
 - **Sensitivity** raises the chance of every known rare (+20% per level). It no longer reveals rares.
 - A band whose rare isn't researched yet shows "a faint signature in the noise".
@@ -136,6 +138,37 @@ Rares work like IOM's veins: one rare per pair of bands, unlocked one at a time 
 - For now rares only feed the Particle Index (like veins in IOM: a rich find on certain bands). **How rares get spent is decided later**; no rare-cost upgrades yet.
 
 ---
+
+## 5b. Resonators
+
+The main sink for rares (a little like IOM's Statues, which are built in Construct with veins, bars and gems). One upgrade line per rare, each buffing a different system. Data: `src/data/resonators.ts`.
+
+| Resonator | Effect per level | Unlocks |
+|---|---|---|
+| **Positron** | +5% Yield | T3 |
+| **Antiproton** | +4% Power | T3 |
+| **Tetraquark** | +30 min offline cap (max 16 levels = +8 h) | T3 |
+| **Pentaquark** | +8% Wellspring output | T12 |
+| **Glueball** | Index levels need 3% fewer particles (multiplies) | T12 |
+| **Graviton** | +5% Resonance | T12 |
+
+- Each also needs its rare researched first.
+- Level L costs `10 × 3^L` of the rare plus `base × 3^L` of one particle from its bands (electron, muon, kaon, psi, Z boson, Higgs).
+- **Permanent:** kept through Recalibrate, like the rares that pay for them.
+- Tuning note: costs grow ×3 per level because rare income grows with Power. At ×1.6 the watching player's Power ran away (T10 in 5.5 h instead of ~20 h). Sim at T10 now: engaged player ~Lv 4–6 on each of the first three; watching player ~Lv 7–11.
+
+## 5c. Experiments
+
+Unlocks at **T6**. A board of requests, like IOM's Contracts (which deliver bars for Contract Points that buy upgrades, and reset on prestige). Data: `src/data/experiments.ts`.
+
+- **Board:** 3 requests. Each asks for 1–2 of your 4 most advanced discovered particles, about **10 minutes of your best production** of each when the request appears, ×1.04 per experiment completed this run.
+- **Requests never expire.** **Skip** swaps one for a new request, then has a 10-minute cooldown.
+- **Reward:** 10 **Data** per particle type in the request (×Instrument Grants).
+- **Cross-links:** once the Wellspring is open, 30% of requests also ask for Charge; 25% of requests also pay about 10 minutes' worth of a rare you know.
+- **Data upgrades:** Instrument Grants (+10% Data), Lean Protocols (requests −5%), Rare Assays (+10% rare chance), Charge Studies (+10% Charge), Conduit Studies (+10% Conduit strength), Beam Diagnostics (+5% Power). Each has a max level and costs Data (×1.4–1.5 per level).
+- **Resets on Recalibrate:** board, Data, completions and Data upgrades (like IOM's contract upgrades).
+- Requests are generated with a seeded random number kept in the save, so the economy stays deterministic.
+- Sim: the engaged player completes ~15 experiments by T10 and buys a handful of Data upgrades; Threshold pacing is unchanged.
 
 ## 6. Thresholds (power checks)
 
@@ -196,16 +229,23 @@ Thresholds are an **Obelisk-style power track**, separate from the bands. The fu
 
 ---
 
-## 9. Wellspring (MVP, simplest form)
+## 9. Wellspring
 
-Unlocks at **T5**. It's a small upgrade panel for now, not yet its own mini-game.
+Unlocks at **T5**. The Ring's mysterious power source, with **its own resource: Charge**. It should always feel like its own system; later Thresholds and other systems add new Wellspring mechanics (the full mini-game arrives at T20), especially once base Power stops moving the needle.
+
+- **Charge** gathers on its own once the Wellspring is unlocked: 1 per second, ×Taps, ×(1 + Wellspring output buffs: Psi and Glueball Index, Pentaquark Resonator). It accumulates offline too.
 
 | Upgrade | Effect | Paid in |
 |---|---|---|
-| **Conduits** | ×1.15 Power multiplier per level | Band 9–12 particles |
-| **Stabilizers** | −4% band density per level (makes higher bands easier to farm) | Band 5–8 particles |
+| **Conduits** | +0.25 **base Power** per level, added before every multiplier (huge at first, fades later) | Charge (100 × 2.2^L) |
+| **Taps** | ×1.2 Charge per level | Pion + Kaon, then Tau + Psi |
+| **Coils** | Each Conduit gives +15% more base Power per level (so Coils matter more as Conduits pile up) | Kaon + Tau, then Tau + Psi (×3 per level) |
 
-**Resets on Recalibrate.** The sim showed that keeping it was the main reason run 2 went fast (23% of run 1 kept vs. 66% reset), leaving no room for Ring Schematics. Permanent Wellspring boosts come from schematics nodes instead (e.g. Wellspring +50%).
+**Resets on Recalibrate**, Charge included. The sim showed that keeping it was the main reason run 2 went fast (23% of run 1 kept vs. 66% reset), leaving no room for Ring Schematics. Permanent Wellspring head starts come from Schematics nodes instead (e.g. start with Conduits at 5).
+
+Coils replaced **Stabilizers** (−4% band density), which applied to every band equally and so was really a hidden "+4% output".
+
+Tuning notes: a first pass (+0.5 base Power per Conduit, cost ×1.6, Taps ×1.3) let the engaged player reach ~×11 Power by T10. Coils at +20% and ×2.2 cost were also too strong (14 levels). Current values: the engaged player has ~13 Conduits and ~6 Coils at T10.
 
 ---
 
@@ -221,15 +261,15 @@ Unlocks at **T5**. It's a small upgrade panel for now, not yet its own mini-game
 
 The long-term goal is a **large, branching tree like CIFI's Loop Mods**, not a small skill tree like IOM's. That's why there's no separate skill tree: Schematics is the one big tree, and new branches arrive at later Thresholds (see the [Threshold Roadmap](threshold-roadmap.md)).
 
-Three branches, bought with Resonance:
+Schematics give **abilities and choices**; Resonators give the steady numbers (GDD §7b). Three branches, bought with Resonance (example nodes, draft):
 
 | Branch | Example nodes |
 |---|---|
-| **Beam** (Power) | +25% Power · Wellspring +50% · Thresholds −10% requirement |
-| **Lens** (Detection/Yield) | +0.5 base Yield · rares +50% · Index levels need −20% |
-| **Spiral** (Speed/automation) | Start each run at max band 4 · **Band Cycle** (auto-rotate between 2 chosen bands) · **Auto-Buy** (buys upgrades automatically) · Ring Speed costs −25% · +12 h offline cap |
+| **Beam** (Power) | Start each run with Wellspring Conduits at level 5 · Breach Thresholds automatically when ready · A big ×2 Power node (expensive, one-off) |
+| **Lens** (Detection) | A band's rare also appears on its neighbours at half rate · Sensitivity is kept through Recalibrate · Each Index entry gains a second buff at level 5 |
+| **Spiral** (Speed/automation) | Start each run with Ring Speed at level 9 (band 4 stable) · **Band Cycle** (auto-rotate between 2 chosen bands) · **Auto-Buy** (buys upgrades automatically) · **Auto-Research** |
 
-Unlock-style nodes (Band Cycle, Auto-Buy) are the "CIFI feeling" of new mechanics, not just bigger numbers.
+Unlock-style nodes (Band Cycle, Auto-Buy) are the "CIFI feeling" of new mechanics, not just bigger numbers. Avoid small "+X%" nodes for anything a Resonator already boosts.
 
 ---
 
