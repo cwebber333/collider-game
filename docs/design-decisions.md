@@ -179,6 +179,17 @@ A running record of decisions made while shaping the game design. Newest at the 
 | Ring 2 connection | Cost ×4 (20B Z + 20B Higgs, ×4 rares): about **10 h** more after T14 for an engaged player | Should be a small grind, not instant |
 | Operator's notes | Rewritten: the Ring is a machine (not sentient), and each note only covers what was just found | The old notes hinted at a living Ring and ran ahead of the player |
 
+## Round 13: Second Ring systems (2026-10-13)
+
+| Topic | Decision | Why |
+|---|---|---|
+| Approach | **Design the Second Ring's systems on paper first** ([ring-2-systems.md](ring-2-systems.md)) | They're the big, minigame-like ones |
+| Order | **Stray Signals at T15, Detector Array at T18** (swapped) | IOM opens Stargazing before Fishing. Signals builds on choosing bands, is lighter to learn, and rewards active play at the start of a Ring |
+| Stray Signals | **Tap-to-catch with a low spawn rate at first**; auto-catch comes later | Rewards active play early |
+| Wellspring chain (T20) | **A CIFI-style cascade:** Springs make Charge, and each higher tier makes the tier below. Nothing is consumed | CIFI's core loop, checked on its wiki. Tried "for now": blending it into an IOM-style game is unproven |
+| Early pacing | **Leave as is** | Idle players are already 5–9× slower early |
+| Names | **Short and easy to say**, made up if needed (the Inner Ring too, later) | "Sterile neutrino" and similar are clunky |
+
 ## Open questions
 - How do the four upgrade styles fit into one coherent structure without overload?
 - What makes the fusion theme concrete and different from AD's abstract dimensions?

@@ -108,21 +108,21 @@ The drift from real to theorized happens inside the rares too.
 
 ## Second Ring: Theorized particles (bands 13–24)
 
-Connecting opens bands 13–24, the Second Ring's first rare, and the **Detector Array** station.
+Connecting opens bands 13–24 and the Second Ring's first rare. Its big systems are designed in [ring-2-systems.md](ring-2-systems.md).
 
 | T | Reward | Type | Rough time (engaged) |
 |---|---|---|---|
-| 15 | **Detector Array**: first detector modules (boost Yield and rares per particle family) | Unlock | ~4.6 days |
+| 15 | **Stray Signals**: a signal appears on a band that rotates every 30 min; tap to catch it; each signal levels its own buff | Unlock | ~4.6 days |
 | 16 | **Trials: second set** | Unlock | ~5.3 days |
 | 17 | +10% Power | Bonus | ~6.1 days |
-| 18 | **Stray Signals**: a signal appears on a rotating band; tune in to catch it; each signal levels a permanent buff | Unlock | ~7.0 days |
-| 19 | **Detector Array: second module family** | Unlock | ~8.0 days |
-| 20 | **Wellspring becomes a mini-game**: its own resource and production chain (CIFI-style) | Unlock | ~9.2 days |
+| 18 | **Detector Array**: detectors assigned to sectors catch traces on a tick (like IOM's Fishing) | Unlock | ~7.0 days |
+| 19 | **Detector Array: second sector** | Unlock | ~8.0 days |
+| 20 | **Wellspring cascade**: Springs make Charge, higher tiers make the tier below (CIFI-style generators) | Unlock | ~9.2 days |
 | 21 | **Anomalies**: the first rotating event | Unlock | ~11 days |
 | 22 | **Stray Signals**: auto-catch | Unlock | ~12 days |
 | 23 | **Resonators: Second Ring lines** | Unlock | ~14 days |
 | 24 | **Schematics: Detector branch** | Unlock | ~16 days |
-| 25 | **Detector Array: third module family** | Unlock | ~18 days |
+| 25 | **Detector Array: third sector** | Unlock | ~18 days |
 | 26 | **Experiments: tier 3** | Unlock | ~21 days |
 | 27 | +10% Power | Bonus | ~24 days |
 | 28 | **Milestone: connect to the Third Ring** | Milestone | ~28 days |
