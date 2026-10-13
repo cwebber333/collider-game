@@ -143,9 +143,9 @@ export function contributions(state: GameState, stat: StatId): Contribution[] {
   }
 
   // Thresholds
-  if (stat === 'power') {
+  if (stat === 'power' || stat === 'yield') {
     THRESHOLDS.slice(0, state.breached).forEach((t, i) => {
-      if (t.reward.kind === 'bonus' && t.reward.bonus === 'power') push('thresholds', `T${i + 1}`, 'add', t.reward.amount);
+      if (t.reward.kind === 'bonus' && t.reward.bonus === stat) push('thresholds', `T${i + 1}`, 'add', t.reward.amount);
     });
   }
 
@@ -179,6 +179,7 @@ export function contributions(state: GameState, stat: StatId): Contribution[] {
   // Trials
   if (stat === 'power') push('trials', `Endurance Lv ${trialLevel(state, 'endurance')}`, 'add', trialBonus(state, 'power'));
   if (stat === 'rareChance') push('trials', `Keen Eye Lv ${trialLevel(state, 'keenEye')}`, 'add', trialBonus(state, 'rareChance'));
+  if (stat === 'chargeRate') push('trials', `Deep Draw Lv ${trialLevel(state, 'deepDraw')}`, 'add', trialBonus(state, 'charge'));
 
   // Ring Schematics: a few big one-off multipliers
   if (stat === 'power') push('schematics', 'Overdrive Core', 'mult', schematicMultiplier(state, 'power'));

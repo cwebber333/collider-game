@@ -25,9 +25,9 @@ Solo hobby idle/incremental mobile game: a mysterious ancient particle collider.
 - `src/data/`: all tunable numbers (bands, particles, upgrades, thresholds). Balance by editing data, not logic.
 - `src/bot/`: the player bot (pure TS, no React). Used by the sim and by the dev-tools auto-play.
 - `sim/`: headless simulation that runs the economy module with the bot and reports pacing.
-- `src/game/`: React glue: `useGame` (clock, autosave, offline catch-up) and `save.ts` (AsyncStorage).
-- `src/ui/` + `App.tsx`: React Native screens that only read state and dispatch actions. Dev-only tools (free buys, bot auto-play, time skip, reset) show under `__DEV__`.
-- Single screen for now; move to Expo Router (`src/app/`) when a second screen is needed.
+- `src/game/`: React glue: `useGame` (clock, autosave, offline catch-up), `GameProvider` (shares the one running game with every screen via `useLoadedGame()`), and `save.ts` (AsyncStorage).
+- `src/app/`: Expo Router screens (every file is a route). Bottom tabs: Collider (`index`), Wellspring, Stations (hub + `[id]` pages), Recalibrate, Menu (IOM-style grid + its own pages).
+- `src/ui/`: components that only read state and dispatch actions. `shell.tsx` is the frame around every screen (top bar, the always-visible collider strip, tab bar, pop-ups). `navigation.tsx` registers the tabs, Stations tiles and Menu tiles, so **a new system = one entry there plus its card/screen**. Dev-only tools (free buys, bot auto-play, time skip, reset) live in Menu → Dev tools under `__DEV__`.
 
 ## Commands
 ```bash

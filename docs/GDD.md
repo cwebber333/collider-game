@@ -128,6 +128,23 @@ Our version (draft):
 - **Lore:** the note text itself is a piece of the mystery; higher tiers reveal more of what the operator wrote.
 - **Open questions:** where it unlocks (IOM's is Obelisk 15, so maybe early in the Second Ring); how it relates to the Particle Index (separate system, or the Index's upgrade layer); what the tier currencies are (Crystals could fit one tier).
 
+## 6b. Gravity Well (planned, not scheduled yet)
+
+The user's request: a mechanic like IOM's **Void Portals**, so farming a high band (e.g. band 12) can also bring in particles from every band below it (1–12). Then you don't have to drop back to old bands for the particles that old upgrades still cost.
+
+How IOM does it (its wiki's Drones page, checked 2026-10-12):
+- It comes from the **Void Drone** suit, unlocked by Obelisk progress.
+- Each ore that spawns has a chance (10% at the start, raised by upgrades) to become a **portal**.
+- A portal turns the ore into any ore from Tin up to the one it started as, with even odds.
+- Portaled ores pay a multiplier that grows with the drone's grade. Some portals upgrade further into Golden, Rainbow and Galactic tiers (×5 each).
+- IOM's drones need **fuel**, but later in the game there's plenty to keep every drone running. The user doesn't see that as breaking the nothing-drains rule. Pillar 5 above still says "no fuel", so settle the wording when this gets designed.
+
+Our version, to design later:
+- A chance per collision to come out as a particle from any band at or below the current one, with even odds.
+- Upgradable chance and a payout multiplier.
+- It could come from a Threshold, a Schematics node or a station.
+- Working name: **Gravity Well** (the user's suggestion).
+
 ## 7. Anomalies (rotating events)
 
 Self-contained side modes that rotate, for example one active at a time for about 5–7 days.
@@ -149,7 +166,7 @@ Both are permanent (kept through Recalibrate), so they need clearly different jo
 |---|---|---|
 | Paid with | **Rares**, farmed during play from specific bands | **Resonance**, earned only by Recalibrating (more from a higher peak Power) |
 | Shape | One simple line per rare: level 1, 2, 3… | A large branching tree (like CIFI's Loop Mods); you choose a path |
-| Kind of reward | Steady numeric boosts: +Yield, +Power, +offline cap, +Wellspring output, Index requirement, +Resonance | **New abilities and rule changes**: automation (Band Cycle, Auto-Buy, Auto-Research), head starts (begin runs further along), new mechanics; plus a **few** rare, big multipliers |
+| Kind of reward | Steady numeric boosts: +Yield, +Power, +Data, +Wellspring output, Index requirement, +Resonance | **New abilities and rule changes**: automation (Band Cycle, Auto-Buy, Auto-Research), head starts (begin runs further along), new mechanics; plus a **few** rare, big multipliers |
 | What it makes you do | Go back to older bands to hunt rares | Plan runs and decide when to Recalibrate |
 | Pace | Something to buy most sessions | A few meaningful choices per Recalibrate |
 

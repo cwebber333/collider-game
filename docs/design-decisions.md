@@ -68,7 +68,7 @@ A running record of decisions made while shaping the game design. Newest at the 
 | Topic | Decision | Notes |
 |---|---|---|
 | Temporary boosts | **None**: overcharge dropped | Burst buffs make base play feel slow when they're off |
-| Offline cap | **24 h** | Raisable via progression (schematics node) |
+| Offline cap | **24 h** | Fixed from the start (changed 2026-10-12, Round 12) |
 | Wellspring on Recalibrate | **Kept** (default) | Revisit if the simulation shows runs getting too fast |
 | Pacing | Spec targets stand as defaults | Validate by feel once the simulation/prototype exists |
 | Particle naming | **Real particles first**, then theorized, then invented ("Known → Theorized → Impossible") | Ordered roughly by mass, so higher-energy bands make heavier particles. The Graviton is the turning point at the end of the MVP |
@@ -139,8 +139,8 @@ A running record of decisions made while shaping the game design. Newest at the 
 | Bot Recalibrate policy | Recalibrate when the gain would at least double Resonance earned, and not within 30 min of the last | A common prestige rule of thumb; used by the sim and tuner |
 | Trials (built) | **Goals completed during normal play**, not separate restricted runs; pay Marks for permanent Trial upgrades | IOM's Challenges work this way (checked on its wiki); no second save slot needed |
 | Capacitors (built) | **Stored Charge → Power** (+2%/level per ×10 Charge held), paid in a rare | Gives Charge a reason to be held, against spending it on Conduits, Research and Experiments |
-| Experiments tier 2 (built) | Data upgrade caps ×2, +50% Data | Small; more Experiment depth comes in later Rings |
-| Ring connection (built) | T14 build: 5B Z + 5B Higgs, some of every Inner Ring rare, 200 Crystals | Completes the Inner Ring. First real use of Crystals |
+| Higher Data upgrade caps (built; was "Experiments tier 2") | Data upgrade caps ×2, +50% Data | Small; more Experiment depth comes in later Rings |
+| Ring connection (built) | T14 build: 20B Z + 20B Higgs (×4 on 2026-10-12), some of every Inner Ring rare, 200 Crystals | Completes the Inner Ring. First real use of Crystals |
 | Resonators vs. Schematics | **Resonators give numbers; Schematics give abilities and choices** | Both are permanent. Schematics avoid small +X% nodes that duplicate Resonators; at most a few big multipliers. See GDD §7b |
 | Schematics size | **Ring Schematics grows into a large CIFI-style tree** (like Loop Mods) | Why no separate IOM-style skill tree: one big tree instead of two small ones |
 | Overall timeline | **Outer Ring reachable in ~4–6 months** (engaged player); Second Ring ~4 days, Third ~4 weeks, T60 ~10 months | Not set in stone |
@@ -153,6 +153,31 @@ A running record of decisions made while shaping the game design. Newest at the 
 | Threshold count | **~60** (14 / 14 / 16 / 16 per Ring) | Third and Outer Rings get a couple more, not ~20 |
 | Later Rings | **Thresholds slow down on purpose** (gaps ~3 days → ~2 weeks); side systems carry progress there | Like IOM, where late Obelisk levels slow and Stargazing, Fishing, Pets etc. carry progress. Keeps it fresh |
 | New early systems | **Resonators** (rare sink, statue-like), **Experiments** (request board → Data tree, contract-like), **Trials** (challenge-like restricted runs) | Clearance skill tree not chosen; Schematics is the big tree. Placement in the [Threshold Roadmap](threshold-roadmap.md) v0.2 |
+
+## Round 11: Mobile UI layout (2026-10-12)
+
+| Topic | Decision | Why |
+|---|---|---|
+| Layout | **Hybrid (option C):** a collider strip always on top (Power, Yield, band picker, next-Threshold bar with Breach), the current tab below, five bottom tabs: Collider, Wellspring, Stations, Recalibrate, Menu | The player always sees how the Ring runs and how close the next Threshold is. Chosen over a pure IOM layout (collider fills the screen, menus as sheets) and a pure CIFI layout (fixed tabs only) |
+| Stations | A CIFI-console-style **hub of tiles** (Rare Research, Resonators, Experiments, Trials), each opening its own page | CIFI's Upgrade Console lists areas that unlock with ship progress; the hub grows without the tab bar growing |
+| Menu | An IOM-style **grid of every system**, grouped Permanent / This run / Other | IOM's menu groups systems by whether prestige resets them. The user likes being able to reach anything in one or two taps |
+| Locked things | Tabs and tiles stay visible, dimmed, showing "Unlocks at T#" | You can see what's coming |
+| Badges | A dot on a tab or tile when something there can be bought or done | Tells you where to look without opening everything |
+| Pop-ups | Away report, Threshold breach (reward, where to find it, lore), Power/Yield breakdown | Big moments get a beat of their own |
+| Laptop play | In the browser the game is held to phone width (430 px) | Play tests on the laptop look like the phone |
+| Later | IOM-style pinning of favourite menus to the bar, if the tab choices feel wrong in play | |
+
+## Round 12: Play-test changes (2026-10-12)
+
+| Topic | Decision | Why |
+|---|---|---|
+| Offline cap | **Fixed at 24 h from the start.** Its three upgrades became other things: T7 → **+10% Yield**; Tetraquark Resonator → **+8% Data from Experiments**; Trial upgrade Long Watch → **Deep Draw (+10% Charge)**. Later Roadmap rows T27 and T43 → +10% Power and +10% Yield | Starting lower and raising it to 24 h isn't much of a reward; a full day from day one is friendlier |
+| Trials | **Progress counts from when Trials open.** Experiments and Collect Trials count only what happens after that; anything already true then needs a later run (after a Recalibrate). The two "hold a rare" Trials became "collect" Trials. The card shows progress bars | Busy Bench and Exotic Collection were completing the moment Trials unlocked |
+| "Experiments: tier 2" | Renamed **Higher Data upgrade caps** (×2 caps, +50% Data) | Says what it does |
+| Wellspring Charge | **No cap** | A cap throws away production while you're away. Capacitors reward holding Charge, so a cap would cap them too. Charge grows steadily, and Capacitors only count factors of 10, so there's no runaway |
+| Gravity Well | Planned (GDD §6b), like IOM's Void Drone portals | Farm a high band and still get every lower band's particles |
+| Ring 2 connection | Cost ×4 (20B Z + 20B Higgs, ×4 rares): about **10 h** more after T14 for an engaged player | Should be a small grind, not instant |
+| Operator's notes | Rewritten: the Ring is a machine (not sentient), and each note only covers what was just found | The old notes hinted at a living Ring and ran ahead of the player |
 
 ## Open questions
 - How do the four upgrade styles fit into one coherent structure without overload?

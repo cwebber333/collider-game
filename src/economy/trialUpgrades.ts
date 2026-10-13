@@ -1,5 +1,6 @@
 // Trials: completions, Marks and Trial upgrades. Read-only helpers; checking
 // conditions and buying live in actions.ts.
+import type { ParticleId } from '../data/particles';
 import { TRIAL_UPGRADE_IDS, TRIAL_UPGRADES, type TrialUpgradeEffect, type TrialUpgradeId } from '../data/trials';
 import type { GameState } from './state';
 
@@ -8,6 +9,18 @@ export interface TrialsState {
   completed: string[];
   marks: number;
   levels: Partial<Record<TrialUpgradeId, number>>;
+  /** Snapshot taken when Trials open; progress counts from here. */
+  start?: TrialStart;
+}
+
+export interface TrialStart {
+  /** Lifetime particles when Trials opened (Collect Trials count from here). */
+  lifetime: Partial<Record<ParticleId, number>>;
+  /** Experiments completed this run when Trials opened, and which run that was. */
+  experiments: number;
+  recalibrations: number;
+  /** Trials whose conditions were already true then: they need a later run. */
+  metAtStart: string[];
 }
 
 export function newTrials(): TrialsState {

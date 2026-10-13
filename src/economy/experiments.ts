@@ -4,12 +4,13 @@ import {
   DATA_UPGRADES,
   DATA_UPGRADE_IDS,
   DATA_PER_PARTICLE,
-  TIER2_DATA_MULT,
-  TIER2_MAX_LEVEL_MULT,
+  DATA_CAPS_DATA_MULT,
+  DATA_CAPS_MAX_LEVEL_MULT,
   type DataUpgradeEffect,
   type DataUpgradeId,
 } from '../data/experiments';
 import type { ParticleId } from '../data/particles';
+import { resonatorBonus } from './resonators';
 import type { Resource } from '../data/resources';
 import { costEntries, type Cost } from './resources';
 import { hasFeature } from './progress';
@@ -69,13 +70,14 @@ export function requestCost(state: GameState, request: ExperimentRequest): Cost 
 /** Data a request pays when completed. */
 export function requestData(state: GameState, request: ExperimentRequest): number {
   const kinds = Object.keys(request.base).length;
-  const tier = hasFeature(state, 'experimentsTier2') ? TIER2_DATA_MULT : 1;
-  return Math.floor(DATA_PER_PARTICLE * kinds * (1 + dataBonus(state, 'dataGain')) * tier);
+  const caps = hasFeature(state, 'dataCaps') ? DATA_CAPS_DATA_MULT : 1;
+  // Systems multiply: Grants (Experiments) × Tetraquark Resonator × higher caps.
+  return Math.floor(DATA_PER_PARTICLE * kinds * (1 + dataBonus(state, 'dataGain')) * (1 + resonatorBonus(state, 'data')) * caps);
 }
 
-/** A Data upgrade's max level (raised by Experiments tier 2). */
+/** A Data upgrade's max level (raised by the higher-Data-caps Threshold). */
 export function dataMaxLevel(state: GameState, id: DataUpgradeId): number {
-  const mult = hasFeature(state, 'experimentsTier2') ? TIER2_MAX_LEVEL_MULT : 1;
+  const mult = hasFeature(state, 'dataCaps') ? DATA_CAPS_MAX_LEVEL_MULT : 1;
   return DATA_UPGRADES[id].maxLevel * mult;
 }
 

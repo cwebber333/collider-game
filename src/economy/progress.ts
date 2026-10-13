@@ -2,8 +2,6 @@
 import { OFFLINE_CAP_SECONDS } from '../data/constants';
 import type { FeatureId } from '../data/features';
 import { THRESHOLDS, type BonusKind, type ThresholdDef } from '../data/thresholds';
-import { resonatorBonus } from './resonators';
-import { trialBonus } from './trialUpgrades';
 import type { GameState } from './state';
 
 export function breachedThresholds(state: GameState): readonly ThresholdDef[] {
@@ -30,12 +28,10 @@ export function thresholdBonus(state: GameState, bonus: BonusKind): number {
   return total;
 }
 
-/** Longest time away that still counts for offline progress. */
-export function offlineCap(state: GameState): number {
-  return (
-    OFFLINE_CAP_SECONDS +
-    thresholdBonus(state, 'offlineCap') +
-    resonatorBonus(state, 'offlineCap') +
-    trialBonus(state, 'offlineCap')
-  );
+/**
+ * Longest time away that still counts for offline progress. Fixed at 24 h
+ * from the start; nothing raises it (other upgrades give other things).
+ */
+export function offlineCap(_state: GameState): number {
+  return OFFLINE_CAP_SECONDS;
 }

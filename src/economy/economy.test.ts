@@ -24,6 +24,8 @@ import {
   dataMaxLevel,
   extraBoardSlots,
   trialMet,
+  trialProgress,
+  trialWaitsForNextRun,
   rareChances,
   conduitStrength,
   fillBoard,
@@ -212,12 +214,16 @@ describe('thresholds', () => {
     expect(power(game({ breached: powerBonusAt }))).toBeCloseTo(1.1);
   });
 
-  it('can raise the offline cap', () => {
-    const capAt = THRESHOLDS.findIndex((t) => t.reward.kind === 'bonus' && t.reward.bonus === 'offlineCap') + 1;
-    expect(offlineCap(game({ breached: capAt - 1 }))).toBe(OFFLINE_CAP_SECONDS);
-    expect(offlineCap(game({ breached: capAt }))).toBe(OFFLINE_CAP_SECONDS + 4 * 3600);
-    const away = advanceOffline(game({ breached: capAt }), OFFLINE_CAP_SECONDS * 2);
-    expect(away.elapsed).toBe(OFFLINE_CAP_SECONDS + 4 * 3600);
+  it('gives the Yield bonus', () => {
+    const yieldAt = THRESHOLDS.findIndex((t) => t.reward.kind === 'bonus' && t.reward.bonus === 'yield') + 1;
+    const before = game({ breached: yieldAt - 1 });
+    expect(particleYield(game({ breached: yieldAt }))).toBeCloseTo(particleYield(before) * 1.1);
+  });
+
+  it('keeps the offline cap at 24 h no matter what', () => {
+    expect(offlineCap(game({ breached: THRESHOLDS.length }))).toBe(OFFLINE_CAP_SECONDS);
+    const away = advanceOffline(game({ breached: THRESHOLDS.length }), OFFLINE_CAP_SECONDS * 2);
+    expect(away.elapsed).toBe(OFFLINE_CAP_SECONDS);
   });
 });
 
@@ -484,10 +490,10 @@ describe('Capacitors', () => {
   });
 });
 
-describe('Experiments tier 2', () => {
+describe('Higher Data upgrade caps', () => {
   it('doubles Data upgrade caps and pays more Data', () => {
-    const before = game({ breached: thresholdFor('experimentsTier2')! - 1 });
-    const after = game({ breached: thresholdFor('experimentsTier2')! });
+    const before = game({ breached: thresholdFor('dataCaps')! - 1 });
+    const after = game({ breached: thresholdFor('dataCaps')! });
     expect(dataMaxLevel(after, 'grants')).toBe(2 * dataMaxLevel(before, 'grants'));
     const request = { base: { photon: 10 } };
     expect(requestData(after, request)).toBeGreaterThan(requestData(before, request));
@@ -497,18 +503,41 @@ describe('Experiments tier 2', () => {
 describe('Trials', () => {
   const at = () => thresholdFor('trials')!;
 
+  /** Trials already open (their start snapshot taken). */
+  const opened = (overrides: Partial<GameState> = {}) => ({ ...advance(game({ breached: at() }), 1), ...overrides });
+  const trial = (id: string) => TRIALS.find((t) => t.id === id)!;
+
   it('complete on their own during play and pay Marks', () => {
-    const s = game({ breached: at(), particles: { ...newGame().particles, antiproton: 250 } });
-    const after = advance(s, 1);
-    expect(after.trials.completed).toContain('antimatterHoard');
-    expect(after.trials.marks).toBe(TRIALS.find((t) => t.id === 'antimatterHoard')!.marks);
+    const after = advance(opened({ charge: 2_000_000 }), 1);
+    expect(after.trials.completed).toContain('deepCharge');
+    expect(after.trials.marks).toBe(trial('deepCharge').marks);
     // Only once.
     expect(advance(after, 1).trials.marks).toBe(after.trials.marks);
   });
 
   it('do nothing before their Threshold', () => {
-    const s = game({ breached: at() - 1, particles: { ...newGame().particles, antiproton: 250 } });
+    const s = game({ breached: at() - 1, charge: 2_000_000 });
     expect(advance(s, 1).trials.completed).toEqual([]);
+  });
+
+  it('start at zero when Trials open, even if the player is already past them', () => {
+    const lifetime = { ...newGame().lifetime, pentaquark: 500, antiproton: 500 };
+    const s = game({
+      breached: at(),
+      charge: 2_000_000,
+      lifetime,
+      experiments: { ...newGame().experiments, completed: 20 },
+    });
+    const first = advance(s, 1);
+    expect(first.trials.completed).toEqual([]);
+    expect(trialProgress(first, trial('busyBench'))!.current).toBe(0);
+    expect(trialProgress(first, trial('pentaquarkHoard'))!.current).toBe(0);
+    // Holding 1M Charge was already true, so it needs a later run.
+    expect(trialWaitsForNextRun(first, trial('deepCharge'))).toBe(true);
+    expect(advance(first, 60).trials.completed).toEqual([]);
+    // New progress counts.
+    const more = { ...first, experiments: { ...first.experiments, completed: 30 } };
+    expect(advance(more, 1).trials.completed).toContain('busyBench');
   });
 
   it('check conditions against the current run', () => {
@@ -584,10 +613,12 @@ describe('Resonators', () => {
     expect(power(powered) / power(base)).toBeCloseTo(1 + RESONATORS[1].perLevel);
   });
 
-  it('stop at their max level', () => {
+  it('Tetraquark adds Data from Experiments', () => {
     const tetra = RESONATORS.find((r) => r.rare === 'tetraquark')!;
-    const maxed = rich({ rares: ['positron', 'antiproton', 'tetraquark'], resonators: { tetraquark: tetra.maxLevel! } });
-    expect(resonatorCost(maxed, 'tetraquark')).toBeNull();
+    const request = { base: { photon: 10, electron: 10, muon: 10, pion: 10, kaon: 10 } };
+    const base = requestData(game(), request);
+    const boosted = requestData(game({ resonators: { tetraquark: 5 } }), request);
+    expect(boosted).toBe(Math.floor(base * (1 + 5 * tetra.perLevel)));
   });
 });
 

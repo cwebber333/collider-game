@@ -44,6 +44,12 @@ function upgradeSave(saved: Partial<GameState>): GameState {
   renameParticle(saved, 'jpsi', 'psi'); // renamed 2026-10-11
   // Stabilizers were replaced by Coils (2026-10-11); drop the old level.
   if (saved.levels) delete (saved.levels as Record<string, number>).stabilizers;
+  // Long Watch (+offline cap) became Deep Draw (+Charge) on 2026-10-12; keep the levels bought.
+  const trialLevels = saved.trials?.levels as Record<string, number> | undefined;
+  if (trialLevels && 'longWatch' in trialLevels) {
+    trialLevels.deepDraw = Math.min(10, trialLevels.longWatch);
+    delete trialLevels.longWatch;
+  }
   const fresh = newGame();
   return {
     ...fresh,

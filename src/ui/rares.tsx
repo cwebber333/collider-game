@@ -19,7 +19,7 @@ import {
 } from '../economy';
 import { Button, Card } from './common';
 import { CostLines } from './cost';
-import { formatAmount, formatDuration } from './format';
+import { formatAmount } from './format';
 import { colors, mono, space } from './theme';
 
 /** `freeBuys`: dev mode where purchases cost nothing. */
@@ -79,8 +79,8 @@ function resonatorEffect(def: ResonatorDef, level: number): string {
       return `+${pct} Yield`;
     case 'power':
       return `+${pct} Power`;
-    case 'offlineCap':
-      return `+${formatDuration(total)} offline cap`;
+    case 'data':
+      return `+${pct} Data from Experiments`;
     case 'wellspring':
       return `+${pct} Wellspring output`;
     case 'indexRequirement':

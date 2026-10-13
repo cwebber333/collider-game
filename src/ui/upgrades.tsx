@@ -25,7 +25,7 @@ import { colors, mono, space } from './theme';
 type Props = { state: GameState; dispatch: (action: Action) => void; freeBuys?: boolean };
 
 const COLLIDER: UpgradeId[] = ['beamCurrent', 'collectorGrid', 'ringSpeed', 'sensitivity'];
-const WELLSPRING: UpgradeId[] = ['conduits', 'coils', 'taps', 'capacitors'];
+export const WELLSPRING: UpgradeId[] = ['conduits', 'coils', 'taps', 'capacitors'];
 
 /** One line describing what the upgrade does for you right now. */
 function currentEffect(state: GameState, id: UpgradeId): string {

@@ -76,7 +76,7 @@ rare chance/coll = rare base chance × Sensitivity multiplier   (only if Sensiti
 ```
 
 - **Base values:** Power 1, Yield 1, so band 1 starts at 1 collision/sec ≈ 0.8 Mote + 0.2 Flicker per second.
-- **Offline:** produces at the **same rate as online** for the selected band, for up to **24 h** away. The cap can be raised later through progression (e.g. a schematics node).
+- **Offline:** produces at the **same rate as online** for the selected band, for up to **24 h** away. The cap is **fixed at 24 h from the start**; nothing raises it (decided 2026-10-12).
 
 ---
 
@@ -147,7 +147,7 @@ The main sink for rares (a little like IOM's Statues, which are built in Constru
 |---|---|---|
 | **Positron** | +5% Yield | T3 |
 | **Antiproton** | +4% Power | T3 |
-| **Tetraquark** | +30 min offline cap (max 16 levels = +8 h) | T3 |
+| **Tetraquark** | +8% Data from Experiments | T3 |
 | **Pentaquark** | +8% Wellspring output | T12 |
 | **Glueball** | Index levels need 3% fewer particles (multiplies) | T12 |
 | **Graviton** | +5% Resonance | T12 |
@@ -167,7 +167,7 @@ Unlocks at **T6**. A board of requests, like IOM's Contracts (which deliver bars
 - **Cross-links:** once the Wellspring is open, 30% of requests also ask for Charge; 25% of requests also pay about 10 minutes' worth of a rare you know.
 - **Data upgrades:** Instrument Grants (+10% Data), Lean Protocols (requests −5%), Rare Assays (+10% rare chance), Charge Studies (+10% Charge), Conduit Studies (+10% Conduit strength), Beam Diagnostics (+5% Power). Each has a max level and costs Data (×1.4–1.5 per level).
 - **Resets on Recalibrate:** board, Data, completions and Data upgrades (like IOM's contract upgrades).
-- **Tier 2 (T13):** Data upgrade max levels ×2, and +50% Data per experiment.
+- **Higher Data upgrade caps (T13):** Data upgrade max levels ×2, and +50% Data per experiment.
 - Requests are generated with a seeded random number kept in the save, so the economy stays deterministic.
 - Sim: the engaged player completes ~15 experiments by T10 and buys a handful of Data upgrades; Threshold pacing is unchanged.
 
@@ -176,12 +176,12 @@ Unlocks at **T6**. A board of requests, like IOM's Contracts (which deliver bars
 Unlocks at **T8**. Goals with a twist that **complete on their own during normal play**, like IOM's Challenges (which are goals such as "Reach Floor 20 With No Upgrades", paying coins for permanent upgrades, per its wiki). Nothing pauses your run. Data: `src/data/trials.ts`.
 
 - **First set (10 Trials):** e.g. reach 10K Power with no Collector Grid this run; band 8 stable within 2 hours of a run starting; hold 1M Charge; complete 10 Experiments in one run; hold 100 Pentaquarks.
-- Each pays **10–20 Marks**. Marks buy permanent **Trial upgrades:** Practised Hands (Beam Current and Ring Speed −4% cost), Long Watch (+1 h offline cap), Quick Hands (Experiment skips 1 min faster), Keen Eye (+10% rare chance), Endurance (+5% Power).
+- Each pays **10–20 Marks**. Marks buy permanent **Trial upgrades:** Practised Hands (Beam Current and Ring Speed −4% cost), Deep Draw (+10% Charge), Quick Hands (Experiment skips 1 min faster), Keen Eye (+10% rare chance), Endurance (+5% Power).
 - Completions, Marks and upgrades are **permanent**. More Trial sets come at later Thresholds.
 
 ## 5e. Ring connection (T14)
 
-T14 permits building the connection to the Second Ring (like IOM's world monuments): 5B Z bosons, 5B Higgs bosons, some of every Inner Ring rare, and 200 Crystals (players have ~595 free Crystals by then). Building it completes the Inner Ring; the Second Ring itself arrives in a later update. Data: `src/data/rings.ts`.
+T14 permits building the connection to the Second Ring (like IOM's world monuments): 20B Z bosons, 20B Higgs bosons, a good stock of every Inner Ring rare, and 200 Crystals. A small grind after T14: about 10 h more for an engaged player (players have ~595 free Crystals by then). Building it completes the Inner Ring; the Second Ring itself arrives in a later update. Data: `src/data/rings.ts`.
 
 ## 6. Thresholds (power checks)
 
@@ -331,7 +331,7 @@ The simulation will also run an **idle player** (checks in every ~4–6 h) to ma
 
 ## 13. Open questions
 
-- [x] **Q1. Offline cap:** **24 h**, raisable through progression.
+- [x] **Q1. Offline cap:** **24 h**, fixed (never raised).
 - [ ] **Q2. Pacing:** targets in §11 are the default until the simulation lets us feel them out. Also open: how many bands per region (currently 4)?
 - [x] **Q3. Wellspring on Recalibrate:** **resets** (changed from kept after the sim; see the decisions log, Round 9).
 - [x] **Q4. Particle names:** real particles first (Known → Theorized → Impossible).

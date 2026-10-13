@@ -61,7 +61,7 @@ The drift from real to theorized happens inside the rares too.
 | System | Plays like | Spends | Gives |
 |---|---|---|---|
 | **Rare Research** | IOM's Vein Research | Band particles + the previous rare | The next rare type |
-| **Resonators** | IOM's Statues: permanent upgrade lines | Rares (+ some particles) | Each line buffs a different system: Power, Yield, Wellspring, Index growth, Experiments, offline cap… |
+| **Resonators** | IOM's Statues: permanent upgrade lines | Rares (+ some particles) | Each line buffs a different system: Power, Yield, Wellspring, Index growth, Experiments… |
 | **Experiments** | IOM's Contracts: a board of requests | A chosen set of particles per request (a trade, never a drain; requests don't expire) | **Data**, a token currency for the Experiments upgrade tree, which boosts several systems |
 | **Trials** | IOM's Challenges | Nothing: goals with a twist (e.g. reach 10K Power with no Collector Grid) that complete on their own during normal play | **Marks** for permanent Trial upgrades |
 
@@ -97,13 +97,13 @@ The drift from real to theorized happens inside the rares too.
 | 4 | +10% Power | Bonus | ~3.0 h |
 | 5 | **Wellspring**: Charge, Conduits (base Power), Taps and Coils | Unlock | ~4.5 h |
 | 6 | **Experiments**: the request board and Data upgrades | Unlock | ~6.9 h |
-| 7 | Offline cap +4 h | Bonus | ~10 h |
+| 7 | +10% Yield | Bonus | ~10 h |
 | 8 | **Trials**: the first set | Unlock | ~16 h |
 | 9 | **Wellspring: Capacitors**, a third Wellspring line | Unlock | ~24 h |
 | 10 | **Recalibrate + Ring Schematics** (Beam and Lens branches) | Unlock | ~1.5 days |
 | 11 | **Schematics: Spiral branch** (automation: Band Cycle, Auto-Buy) | Unlock | ~1.9 days |
 | 12 | **Resonators: more lines** (Pentaquark, Glueball, Graviton) | Unlock | ~2.4 days |
-| 13 | **Experiments: tier 2** requests and upgrades | Unlock | ~3.1 days |
+| 13 | **Higher Data upgrade caps** (×2 caps, +50% Data) | Unlock | ~3.1 days |
 | 14 | **Milestone: connect to the Second Ring** (build with particles + Inner Ring rares + a few Crystals) | Milestone | ~4 days |
 
 ## Second Ring: Theorized particles (bands 13–24)
@@ -124,7 +124,7 @@ Connecting opens bands 13–24, the Second Ring's first rare, and the **Detector
 | 24 | **Schematics: Detector branch** | Unlock | ~16 days |
 | 25 | **Detector Array: third module family** | Unlock | ~18 days |
 | 26 | **Experiments: tier 3** | Unlock | ~21 days |
-| 27 | Offline cap +4 h | Bonus | ~24 days |
+| 27 | +10% Power | Bonus | ~24 days |
 | 28 | **Milestone: connect to the Third Ring** | Milestone | ~28 days |
 
 ## Third Ring: Fringe particles (bands 25–36)
@@ -147,7 +147,7 @@ Connecting opens bands 25–36, the Third Ring's first rare, and the **Excavatio
 | 40 | **Experiments: tier 4** | Unlock | ~3.3 months |
 | 41 | **Detector Array: module tuning** | Unlock | ~3.7 months |
 | 42 | **Schematics: Excavation branch** | Unlock | ~4.1 months |
-| 43 | Offline cap +4 h | Bonus | ~4.5 months |
+| 43 | +10% Yield | Bonus | ~4.5 months |
 | 44 | **Milestone: connect to the Outer Ring** | Milestone | ~5 months |
 
 ## Outer Ring: Impossible / fantasy particles (bands 37–48)

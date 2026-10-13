@@ -68,8 +68,8 @@ export function ThresholdCard({ state, dispatch }: Props) {
 }
 
 /** Every Threshold: what's done, what's next, what's ahead. */
-export function ThresholdListCard({ state }: { state: GameState }) {
-  const [open, setOpen] = useState(false);
+export function ThresholdListCard({ state, startOpen = false }: { state: GameState; startOpen?: boolean }) {
+  const [open, setOpen] = useState(startOpen);
   return (
     <Card
       title="Thresholds"
@@ -128,11 +128,20 @@ export function ConnectionCard({ state, dispatch }: Props) {
   );
 }
 
-export function LoreCard({ state }: { state: GameState }) {
-  const note = state.breached === 0 ? INTRO_LORE : THRESHOLDS[state.breached - 1].lore;
+/** Every operator's note found so far, newest first. */
+export function LoreLogCard({ state }: { state: GameState }) {
+  const notes = THRESHOLDS.slice(0, state.breached)
+    .map((t, i) => ({ title: `T${i + 1}`, text: t.lore }))
+    .reverse();
+  notes.push({ title: 'Note on the console', text: INTRO_LORE });
   return (
-    <Card title={state.breached === 0 ? 'Note on the console' : `Operator's note · T${state.breached}`}>
-      <Text style={styles.lore}>“{note}”</Text>
+    <Card>
+      {notes.map((note) => (
+        <View key={note.title} style={{ gap: 2 }}>
+          <Text style={styles.noteTitle}>{note.title}</Text>
+          <Text style={styles.lore}>“{note.text}”</Text>
+        </View>
+      ))}
     </Card>
   );
 }
@@ -183,6 +192,7 @@ const styles = StyleSheet.create({
   check: { fontSize: 14 },
   powerLine: { flexDirection: 'row', justifyContent: 'space-between' },
   powerNumbers: { color: colors.text, fontFamily: mono, fontSize: 14 },
+  noteTitle: { color: colors.muted, fontSize: 12, fontWeight: '700' },
   lore: { color: colors.text, fontSize: 14, fontStyle: 'italic', lineHeight: 20 },
   body: { color: colors.text, fontSize: 13, lineHeight: 18 },
   connectionCost: { flexDirection: 'row', flexWrap: 'wrap', gap: space.md },

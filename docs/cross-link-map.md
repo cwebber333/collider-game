@@ -26,16 +26,15 @@ Rows are stats; columns are systems.
 | Stat | Collider | Wellspring | Index | Thresholds | Resonators | Experiments | Schematics* | Notes* | Crystal shop* |
 |---|---|---|---|---|---|---|---|---|---|
 | **Power** | ✅ Beam Current | ✅ Conduits (base) | ✅ Photon, Kaon, Pentaquark | ✅ T4 | ✅ Antiproton | ✅ Diagnostics | ○ one big node | ○ | ○ |
-| **Yield** | ✅ Collector Grid | | ✅ Electron, B meson, Positron | | ✅ Positron | ○ | | ○ | ○ |
+| **Yield** | ✅ Collector Grid | | ✅ Electron, B meson, Positron | ✅ T7 | ✅ Positron | ○ | | ○ | ○ |
 | **Charge rate** | | ✅ Taps | ✅ Psi, Glueball | | ✅ Pentaquark | ✅ Charge Studies | ○ | ○ | |
 | **Conduit strength** | | ✅ Coils | ○ | | | ✅ Conduit Studies | ○ head start | ○ | |
 | **Rare chance** | ✅ Sensitivity | ○ | ✅ Tau, Antiproton | | | ✅ Rare Assays | ○ ability | ○ | |
 | **Index requirement** | | | | | ✅ Glueball | ○ | | ○ | |
-| **Offline cap** | | | | ✅ T7 | ✅ Tetraquark | | ○ | | ○ |
 | **Costs** (Beam, Ring Speed) | | | ✅ Pion, Muon | | | ○ | | | |
 | **Threshold requirement** | | | ✅ Z boson, Tetraquark | | | | | | |
 | **Resonance gain** | | | ✅ Higgs, Graviton | | ✅ Graviton | | | | |
-| **Data gain / request size** | | | | | ○ | ✅ Grants, Protocols | | ○ | |
+| **Data gain / request size** | | | | | ✅ Tetraquark | ✅ Grants, Protocols | | ○ | |
 
 **Gaps this shows:**
 - **Conduit strength** has one source (Coils). It's the Wellspring's headline stat, so it should have more.

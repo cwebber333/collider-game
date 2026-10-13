@@ -6,8 +6,8 @@ import type { FeatureId } from './features';
 export type BonusKind =
   /** Added to the Power multiplier: 0.1 = +10% Power. */
   | 'power'
-  /** Extra seconds of offline progress. */
-  | 'offlineCap';
+  /** Added to the Yield multiplier: 0.1 = +10% Yield. */
+  | 'yield';
 
 export type ThresholdReward =
   | { kind: 'unlock'; feature: FeatureId }
@@ -20,12 +20,12 @@ export interface ThresholdDef {
   /** Premium currency granted on breach. */
   crystals: number;
   reward: ThresholdReward;
-  /** Placeholder lore: a previous operator's note, revealed on breach. */
+  /** An operator's note, revealed on breach: what the crew found at this point (no further ahead). */
   lore: string;
 }
 
 /** Shown before the first breach. */
-export const INTRO_LORE = 'The Ring was already humming when we found the control room. Nobody remembers building it. Keep it running.';
+export const INTRO_LORE = 'Found a control room at the end of a collapsed tunnel. The Ring is powered, idling on its lowest band. No manual. Let\'s see what it does.';
 
 const unlock = (feature: FeatureId): ThresholdReward => ({ kind: 'unlock', feature });
 
@@ -36,84 +36,84 @@ export const THRESHOLDS: readonly ThresholdDef[] = [
     power: 9,
     crystals: 10,
     reward: unlock('indexBuffs'),
-    lore: 'The Index woke up on its own. It already had entries for particles we hadn\'t found yet.',
+    lore: 'The console has a catalogue of particles, mostly blank. Each time we log more of one, its entry fills in and the beam runs a little better.',
   },
   {
     power: 53,
     crystals: 15,
     reward: unlock('rareResearch'),
-    lore: 'Something keeps leaving antimatter in the traps. We never set any traps.',
+    lore: 'There\'s a faint signal under the noise on the low bands. Positrons? A research panel lets us tune the detectors toward it.',
   },
   {
     power: 350,
     crystals: 20,
     reward: unlock('resonators'),
-    lore: 'The resonators were here before the Ring. Or the Ring was built around them.',
+    lore: 'Found a row of empty housings along the inner wall, each labelled with a rare particle. Feeding one seems to strengthen the beam.',
   },
   {
     power: 1_100,
     crystals: 25,
     reward: { kind: 'bonus', bonus: 'power', amount: 0.1 },
-    lore: 'Power draw went up by a tenth overnight. Nobody touched the controls.',
+    lore: 'Cleaned years of dust off the beam couplings. About ten percent more power, just like that.',
   },
   {
     power: 1_600,
     crystals: 30,
     reward: unlock('wellspring'),
-    lore: 'The power isn\'t coming from our lines anymore. Something below is feeding it. Let it.',
+    lore: 'There\'s a shaft under the floor plates with a glow at the bottom. The meter calls it a charge source. Whoever built this tapped into it.',
   },
   {
     power: 14_000,
     crystals: 35,
     reward: unlock('experiments'),
-    lore: 'Found a list of experiments on the console. Half are crossed out, in my handwriting.',
+    lore: 'Found a board of old work orders next to the console. Filling them gives us data to work with.',
   },
   {
     power: 40_000,
     crystals: 40,
-    reward: { kind: 'bonus', bonus: 'offlineCap', amount: 4 * 3600 },
-    lore: 'The Ring kept running while we slept. It seems to prefer it that way.',
+    reward: { kind: 'bonus', bonus: 'yield', amount: 0.1 },
+    lore: 'Realigned the collectors. They\'re catching about a tenth more of what comes off the beam.',
   },
   {
     power: 500_000,
     crystals: 45,
     reward: unlock('trials'),
-    lore: 'Ran the Ring with half its systems off. It learned faster than we did.',
+    lore: 'A clipboard of challenges in the last crew\'s handwriting: run it with this off, reach that by then. Might as well try them.',
   },
   {
     power: 2_000_000,
     crystals: 50,
     reward: unlock('capacitors'),
-    lore: 'The Wellspring stores what it can\'t use. Where does the rest go?',
+    lore: 'Found capacitor banks down by the Wellspring shaft. Charge we don\'t spend collects there, and the beam draws on it.',
   },
   {
     power: 50_000_000,
     crystals: 55,
     reward: unlock('recalibrate'),
-    lore: 'Reset everything today. The Ring didn\'t forget a thing.',
+    lore: 'Found a reset lever behind a locked panel, marked RECALIBRATE. Wonder what it\'s for, and why someone locked it away.',
   },
   {
     power: 94_000_000,
     crystals: 60,
     reward: unlock('schematicsSpiral'),
-    lore: 'Taught the Ring to cycle on its own. It already knew how.',
+    lore: 'More schematic pages turned up. These ones describe automatic controls: breaching, buying, researching on their own.',
   },
   {
     power: 180_000_000,
     crystals: 65,
     reward: unlock('resonatorLines2'),
-    lore: 'Logged a graviton. Nobody has ever logged a graviton.',
+    lore: 'Three more housings at the far end of the wall. Their labels name particles nobody has ever detected.',
   },
   {
     power: 330_000_000,
     crystals: 70,
-    reward: unlock('experimentsTier2'),
-    lore: 'The experiments are running themselves now. The results are addressed to someone else.',
+    reward: unlock('dataCaps'),
+    lore: 'Found another cabinet of experiment notes. The last crew took this much further than we have.',
   },
   {
     power: 1_200_000_000,
     crystals: 75,
     reward: { kind: 'milestone', feature: 'secondRing' },
-    lore: 'There\'s a seam in the outer wall. Behind it: another ring, larger, humming at a frequency we never set.',
+    lore: 'There\'s a seam in the outer wall. Behind it: another ring, bigger than this one. Building a connection will take a lot of material.',
   },
 ];

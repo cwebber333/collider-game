@@ -9,8 +9,8 @@ export type ResonatorEffect =
   | 'yield'
   /** +x Power multiplier per level. */
   | 'power'
-  /** +x seconds of offline cap per level. */
-  | 'offlineCap'
+  /** +x Data from Experiments per level. */
+  | 'data'
   /** +x Wellspring output per level. */
   | 'wellspring'
   /** Index levels need (1 − x) as many particles per level (multiplies). */
@@ -49,9 +49,8 @@ export const RESONATORS: readonly ResonatorDef[] = [
   {
     rare: 'tetraquark',
     name: 'Tetraquark Resonator',
-    effect: 'offlineCap',
-    perLevel: 30 * 60,
-    maxLevel: 16, // up to +8 h
+    effect: 'data',
+    perLevel: 0.08,
     unlockedBy: 'resonators',
     cost: { rare: 10, particle: 'kaon', particleBase: 20_000, growth: 3 },
   },

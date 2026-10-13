@@ -13,7 +13,7 @@ export const FEATURE_IDS = [
   'recalibrate',
   'schematicsSpiral',
   'resonatorLines2',
-  'experimentsTier2',
+  'dataCaps',
   'secondRing',
 ] as const;
 
@@ -36,6 +36,6 @@ export const FEATURES: Record<FeatureId, FeatureDef> = {
   recalibrate: { name: 'Recalibrate + Ring Schematics', description: 'Prestige for Resonance and the Schematics tree', built: true },
   schematicsSpiral: { name: 'Schematics: Spiral branch', description: 'Head starts and automation (Auto-Buy, Standing Orders)', built: true },
   resonatorLines2: { name: 'Resonators: more lines', description: 'Lines for Pentaquarks, Glueballs and Gravitons', built: true },
-  experimentsTier2: { name: 'Experiments: tier 2', description: 'Data upgrade caps ×2 and +50% Data per experiment', built: true },
+  dataCaps: { name: 'Higher Data upgrade caps', description: 'Data upgrade caps ×2 and +50% Data per experiment', built: true },
   secondRing: { name: 'Connect to the Second Ring', description: 'Build the connection to the next ring out', built: true },
 };

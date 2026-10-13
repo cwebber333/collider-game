@@ -6,11 +6,14 @@ import {
   hasFeature,
   thresholdFor,
   trialLevel,
+  trialProgress,
   trialUpgradeCost,
+  trialWaitsForNextRun,
   type Action,
   type GameState,
 } from '../economy';
-import { Button, Card } from './common';
+import { Button, Card, ProgressBar } from './common';
+import { formatAmount } from './format';
 import { colors, mono, space } from './theme';
 
 type Props = { state: GameState; dispatch: (action: Action) => void };
@@ -59,16 +62,33 @@ export function TrialsCard(props: Props) {
   return (
     <Card title="Trials" right={<Text style={styles.marks}>{state.trials.marks} Marks</Text>}>
       <Text style={styles.description}>
-        Goals with a twist. They complete on their own during normal play. Permanent.
+        Goals with a twist. They complete on their own during normal play, counting from when Trials opened. Permanent.
       </Text>
-      {open.map((t) => (
-        <View key={t.id} style={styles.trial}>
-          <Text style={styles.name}>
-            {t.name} <Text style={styles.reward}>+{t.marks} Marks</Text>
-          </Text>
-          <Text style={styles.description}>{t.description}</Text>
-        </View>
-      ))}
+      {open.map((t) => {
+        const progress = trialProgress(state, t);
+        return (
+          <View key={t.id} style={styles.trial}>
+            <Text style={styles.name}>
+              {t.name} <Text style={styles.reward}>+{t.marks} Marks</Text>
+            </Text>
+            <Text style={styles.description}>{t.description}</Text>
+            {trialWaitsForNextRun(state, t) ? (
+              <Text style={styles.waits}>Already true when Trials opened: do it again after a Recalibrate.</Text>
+            ) : (
+              progress && (
+                <View style={styles.progress}>
+                  <View style={{ flex: 1 }}>
+                    <ProgressBar progress={progress.current / progress.target} color={colors.warn} />
+                  </View>
+                  <Text style={styles.count}>
+                    {formatAmount(Math.max(0, progress.current))}/{formatAmount(progress.target)}
+                  </Text>
+                </View>
+              )
+            )}
+          </View>
+        );
+      })}
       {done.length > 0 && (
         <Pressable onPress={() => setShowDone(!showDone)} hitSlop={8}>
           <Text style={styles.toggle}>
@@ -88,6 +108,9 @@ const styles = StyleSheet.create({
   tease: { color: colors.muted, fontSize: 13, fontStyle: 'italic' },
   description: { color: colors.muted, fontSize: 12 },
   trial: { gap: 2, paddingVertical: space.xs },
+  progress: { flexDirection: 'row', alignItems: 'center', gap: space.sm, marginTop: 2 },
+  count: { color: colors.muted, fontFamily: mono, fontSize: 11 },
+  waits: { color: colors.faint, fontSize: 11, fontStyle: 'italic' },
   reward: { color: colors.warn, fontWeight: '400', fontSize: 12 },
   toggle: { color: colors.accent, fontSize: 12 },
   done: { color: colors.good, fontSize: 13 },

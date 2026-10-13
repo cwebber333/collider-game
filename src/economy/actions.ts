@@ -370,6 +370,39 @@ function buySchematic(state: GameState, id: SchematicId): GameState {
 
 // ---------- Trials ----------
 
+/** Experiments completed this run, counting only those since Trials opened. */
+function trialExperiments(state: GameState): number {
+  const start = state.trials.start;
+  const sameRun = start !== undefined && start.recalibrations === state.recalibrations;
+  return state.experiments.completed - (sameRun ? start.experiments : 0);
+}
+
+/** Particles collected since Trials opened. */
+function trialCollected(state: GameState, id: ParticleId): number {
+  return state.lifetime[id] - (state.trials.start?.lifetime[id] ?? 0);
+}
+
+/** Count-style progress toward a Trial (null for Trials that are a single check). */
+export function trialProgress(state: GameState, def: TrialDef): { current: number; target: number } | null {
+  const c = def.condition;
+  switch (c.kind) {
+    case 'hold':
+      return { current: balance(state, c.resource), target: c.amount };
+    case 'collect':
+      return { current: trialCollected(state, c.particle), target: c.amount };
+    case 'experiments':
+      return { current: trialExperiments(state), target: c.count };
+    default:
+      return null;
+  }
+}
+
+/** Was this Trial already met when Trials opened, so it needs a later run? */
+export function trialWaitsForNextRun(state: GameState, def: TrialDef): boolean {
+  const start = state.trials.start;
+  return start !== undefined && start.metAtStart.includes(def.id) && start.recalibrations === state.recalibrations;
+}
+
 /** Is a Trial's condition met right now (in the current run)? */
 export function trialMet(state: GameState, def: TrialDef): boolean {
   const c = def.condition;
@@ -385,15 +418,35 @@ export function trialMet(state: GameState, def: TrialDef): boolean {
       return runTime <= c.seconds && stableBand(state) >= c.band;
     case 'hold':
       return balance(state, c.resource) >= c.amount;
+    case 'collect':
+      return trialCollected(state, c.particle) >= c.amount;
     case 'experiments':
-      return state.experiments.completed >= c.count;
+      return trialExperiments(state) >= c.count;
   }
+}
+
+/** Snapshot for when Trials first open, so every Trial starts at zero. */
+function startTrials(state: GameState): GameState {
+  const lifetime: Partial<Record<ParticleId, number>> = { ...state.lifetime };
+  const opened = {
+    ...state,
+    trials: {
+      ...state.trials,
+      start: { lifetime, experiments: state.experiments.completed, recalibrations: state.recalibrations, metAtStart: [] },
+    },
+  };
+  // Anything already true at this moment doesn't count; it waits for a later run.
+  const metAtStart = TRIALS.filter((t) => trialMet(opened, t)).map((t) => t.id);
+  return { ...opened, trials: { ...opened.trials, start: { ...opened.trials.start, metAtStart } } };
 }
 
 /** Completes any Trials whose conditions are met (once Trials are unlocked). */
 export function checkTrials(state: GameState): GameState {
   if (!hasFeature(state, 'trials')) return state;
-  const done = TRIALS.filter((t) => !state.trials.completed.includes(t.id) && trialMet(state, t));
+  if (!state.trials.start) return startTrials(state);
+  const done = TRIALS.filter(
+    (t) => !state.trials.completed.includes(t.id) && !trialWaitsForNextRun(state, t) && trialMet(state, t),
+  );
   if (done.length === 0) return state;
   return {
     ...state,
